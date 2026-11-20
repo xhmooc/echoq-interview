@@ -1,70 +1,95 @@
-<p align="center">
-  <img src="build/icon.png" width="96" height="96" alt="EchoQ Interview" />
-</p>
-
-<h1 align="center">应声面试 · EchoQ-Interview</h1>
+[简体中文](README.md) · [English](README.en.md)
 
 <p align="center">
-  Windows 桌面面试 / 笔试助手：听清面试官的问题，给出可以直接说出口的回答。
+  <img src="build/icon.png" width="88" height="88" alt="EchoQ Interview" />
 </p>
 
-<p align="center">
-  <a href="https://github.com/xhmooc/echoq-interview/releases/latest"><img src="https://img.shields.io/github/v/release/xhmooc/echoq-interview?label=release" alt="Release" /></a>
-  <img src="https://img.shields.io/badge/platform-Windows%2010%20%2F%2011-0078D6" alt="Windows" />
-  <img src="https://img.shields.io/badge/license-MIT-22c993" alt="License" />
-</p>
+<h1 align="center">应声面试 · EchoQ Interview</h1>
 
-| 面试演示 | 笔试演示 |
+<p align="center">面试官说完，屏幕上已经有能直接说出口的回答。</p>
+
+> 实时听清面试官的问题，转成文字，流式生成可以直接说出口的回答。线上面试抓系统声音，现场面试切麦克风；笔试时框选题目，直接给思路和代码。窗口置顶、可拖动、鼠标穿透，隐藏模式下不会出现在屏幕共享画面里（效果因系统和会议软件而异，重要场合请先用手机实拍确认）。仅用于个人学习与技术面试准备，请遵守当地法律与面试方的规定。
+
+## 功能一览
+
+### 面试模式：听清问题，实时出回答
+
+采集系统声音或麦克风，本地转写面试官的话。识别到问题自动生成回答，也可以随时按 `Ctrl+Alt+A` 对当前题目手动作答；回答按题号归档，点右侧 Q1 / Q2 可以回看。
+
+![面试演示](docs/ui/interview.gif)
+
+### 笔试模式：框选题目，出思路和代码
+
+按 `Alt+Shift+A` 框选题目，OCR 识别后生成答案；按 `Alt+Shift+S` 显示或隐藏答案窗。适合算法笔试、在线测评和能力测试。
+
+![笔试演示](docs/ui/written.gif)
+
+### 悬浮窗：不打断手上的事
+
+窗口置顶、半透明，可拖动，也可以开鼠标穿透；控制条能随时收起，键盘始终留在原来的应用里。
+
+### 两路收音
+
+线上面试直接抓电脑声音，自己说话不会触发；现场或电话面试切到麦克风。
+
+### 手机副屏
+
+把回答实时推到手机浏览器，电脑上只留一个很小的窗口。
+
+### 登录即用，也可以自带 Key
+
+登录 EchoQ 账号后直接使用，不需要填写接口地址或 Key。也可以在设置里把大模型、语音识别、笔试视觉识别换成自己接入的 OpenAI 兼容服务。
+
+## 适用场景
+
+| 场景 | 用法 |
 | --- | --- |
-| ![面试演示](docs/ui/interview.gif) | ![笔试演示](docs/ui/written.gif) |
-
-应声面试是一个 Windows 桌面悬浮窗助手。它实时听清面试官的问题，转成文字，并用大模型流式生成能直接说出口的回答；笔试模式下框选题目截图，识别后生成答案。
-
-## 功能
-
-- **本地离线语音识别**：安装包内置 llama.cpp 引擎，首次在应用内下载 Qwen3-ASR 模型，之后语音识别完全离线运行
-- **两路收音**：直接抓取电脑声音（面试官的声音），也可以切到麦克风（现场面试）
-- **实时回答**：识别到问题自动生成，也可以随时按快捷键手动作答
-- **笔试截图答题**：切到笔试模式，框选题目即可 OCR + 大模型作答；答案可显示在置顶悬浮窗，也可推到手机副屏
-- **悬浮窗设计**：置顶、可拖动、鼠标穿透、防录屏隐身
-- **账号登录即用**：回答由 EchoQ 云端生成，登录账号后自动生效，不需要填写接口地址或 Key
-- **可自带 Key**：大模型、语音识别、笔试视觉识别都可以改用自己接入的 OpenAI 兼容服务
-
-> 仅用于个人学习与技术面试准备，请在符合当地法律与面试方规定的前提下使用。
+| 技术面试 | 面试模式，系统声音 + 自动作答 |
+| 电话 / 现场面试 | 面试模式，音源切到麦克风 |
+| 算法笔试 / 在线测评 | 笔试模式，`Alt+Shift+A` 框选题目 |
+| 看不懂的题目或图表 | 笔试模式框选，识别后给思路 |
+| 复盘与整理 | 复制或导出当前回答，按题号回看 |
 
 ## 快速开始
 
-下载安装包：[GitHub Releases](https://github.com/xhmooc/echoq-interview/releases/latest) · [官网下载页](https://job.echoq.cn/#download)
+1. **下载安装**：到 [Releases](https://github.com/xhmooc/echoq-interview/releases) 下载，安装版和免安装版都可以；也可以从[官网下载页](https://job.echoq.cn/#download)获取
+2. **登录账号**：打开客户端登录 EchoQ 账号，回答由云端生成，不需要配置接口地址或 Key
+3. **选模式开始**：面试模式点「开始听面试官」；笔试模式按 `Alt+Shift+A` 框选题目
 
-从源码运行：
+首次使用本地识别时，按界面提示下载引擎和模型，之后语音识别完全离线运行。需要接入自己的服务时，在「设置 → 模型」里填写 OpenAI 兼容地址和 Key。
+
+## 常用快捷键
+
+| 操作 | 快捷键 |
+| --- | --- |
+| 显示 / 隐藏窗口 | `Ctrl+Alt+H` |
+| 打开歌词悬浮窗 / 回主窗 | `Ctrl+Alt+O` |
+| 唤出悬浮控制 | `Ctrl+Alt+M` |
+| 上一题 / 下一题 | `Ctrl+Alt+Z` / `Ctrl+Alt+X` |
+| 对当前题目作答 | `Ctrl+Alt+A` |
+| 清空记录 | `Ctrl+Alt+K` |
+| 笔试：框选题目 | `Alt+Shift+A` |
+| 笔试：显示 / 隐藏答案窗 | `Alt+Shift+S` |
+
+所有快捷键都可以在「设置 → 快捷键」里修改。
+
+## 遇到问题
+
+先看客户端里的报错提示，再带上版本号、Windows 版本和报错原文[提 Issue](https://github.com/xhmooc/echoq-interview/issues/new)；截图里如果有个人信息，记得打码。
+
+也可以直接进反馈群：应声面试 1 群 **337195606**。
+
+## 从源码运行
+
+需要 Node.js 18+ 与 Windows 10 / 11：
 
 ```bash
 npm install
 npm start
 ```
 
-需要 Node.js 18+ 与 Windows 10 / 11。首次启动如果缺少本地引擎或模型，按界面提示下载；也可以在设置里接入自己的服务。
+首次启动如果缺少本地引擎或模型，按界面提示下载；也可以在设置里接入自己的服务。
 
-## 项目结构
-
-| 路径 | 说明 |
-| --- | --- |
-| `main.js` / `preload.js` | 主进程：窗口、快捷键、IPC |
-| `src/main/` | 配置、路径、资源下载、ASR、LLM、账号与日志 |
-| `src/renderer/` | 界面与音频采集（原生 HTML / CSS / JS，无框架） |
-| `tools/` | 命令行自检与引擎准备脚本 |
-| `website/` | 官网静态页 |
-| `build/` | 图标与打包资源 |
-
-## 架构
-
-客户端完全在本机运行：采集声音 → 本地语音识别 → 云端生成回答 → 悬浮窗渲染。账号、计时、云端 ASR 与大模型中转、自动更新由 EchoQ 提供，不属于本仓库。
-
-## EchoQ 系列
-
-- **应声面试（EchoQ Interview）**：本仓库 · [官网](https://job.echoq.cn/)
-- **应声运营（EchoQ Ops）**：[GitHub](https://github.com/xhmooc/echoq-ops) · [官网](https://ops.echoq.cn/)
-
-## 许可证
+## 许可协议
 
 [MIT](LICENSE)。产品名称、Logo 与 EchoQ 云端服务不在授权范围内。
