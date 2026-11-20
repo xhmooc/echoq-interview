@@ -1,0 +1,78 @@
+{
+  "llm": {
+    "mode": "official",
+    "base_url": "https://your-llm-endpoint.example/v1",
+    "api_key": "",
+    "model": "",
+    "temperature": 0.4,
+    "answer_detail": 3,
+    "answer_oral": false,
+    "official_key": "",
+    "official_model": ""
+  },
+  "asr": {
+    "provider": "llama",
+    "base_url": "https://your-asr-endpoint.example/v1",
+    "api_key": "",
+    "model": "",
+    "llama_bin": "",
+    "llama_model": "",
+    "llama_mmproj": "",
+    "llama_port": 8091,
+    "hotwords": "",
+    "custom_presets": {},
+    "language": "auto"
+  },
+  "profile": {
+    "job": "",
+    "resume": "",
+    "syllabus": ""
+  },
+  "audio": {
+    "source": "system",
+    "silence_ms": 900,
+    "max_segment_s": 14,
+    "sensitivity": 0.012,
+    "auto_answer": true
+  },
+  "ui": {
+    "opacity": 1,
+    "theme": "light",
+    "content_protection": true,
+    "hotkeys": true
+  },
+  "written": {
+    "ocr_mode": "auto",
+    "ocr_engine": "windows",
+    "custom_base_url": "https://your-vision-endpoint.example/v1",
+    "custom_api_key": "",
+    "custom_model": "",
+    "answer_target": "both"
+  },
+  "auth": {
+    "base_url": "http://127.0.0.1:8787"
+  },
+  "setup": {
+    "done": false
+  },
+  "window": {
+    "x": null,
+    "y": null,
+    "width": 460,
+    "height": 660,
+    "mini": {
+      "x": null,
+      "y": null,
+      "width": 360,
+      "height": 430
+    },
+    "lyrics": {
+      "x": null,
+      "y": null,
+      "width": 560,
+      "height": 220,
+      "fontSize": 22,
+      "locked": false
+    }
+  }
+}

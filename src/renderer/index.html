@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+  <title>应声面试</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="boot-mask" id="bootMask">
+    <div class="boot-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24">
+        <path d="M5 10v4M8.5 7v10M12 4.5v15M15.5 7v10M19 10v4"></path>
+      </svg>
+    </div>
+    <div class="boot-state">
+      <span class="boot-dot"></span>
+      <span class="boot-text">准备中</span>
+    </div>
+    <div class="boot-line" aria-hidden="true"><span></span></div>
+  </div>
+  <div id="app">
+    <header class="titlebar">
+      <div class="brand">
+        <span class="dot" id="statusDot"></span>
+        <span class="brand-name">应声面试</span>
+        <span class="brand-en">EchoQ</span>
+        <span class="brand-sub" id="statusText">待启动</span>
+        <span class="badge-through hidden" id="throughBadge">穿透中</span>
+      </div>
+      <div class="mode-switch" id="modeSwitch">
+        <button class="mode-btn active" type="button" data-mode="interview">面试</button>
+        <button class="mode-btn" type="button" data-mode="written">笔试</button>
+      </div>
+      <div class="win-btns">
+        <button class="home-chip protect-chip" id="btnProtect" type="button" aria-pressed="false" title="防录屏隐身">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3l7 3v6c0 4.2-2.8 7.6-7 9-4.2-1.4-7-4.8-7-9V6l7-3z"></path>
+            <path class="shield-check" d="M8.8 12.1l2.1 2.1 4.3-4.3"></path>
+          </svg>
+        </button>
+        <button class="icon-btn" id="btnHide" title="隐藏（Ctrl+Alt+H）">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"></path></svg>
+        </button>
+        <button class="icon-btn danger" id="btnQuit" title="退出">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+        </button>
+      </div>
+    </header>
+
+    <section class="control-bar" id="interviewBar">
+      <button class="primary" id="btnListen">开始听面试官</button>
+      <div class="meter"><span id="levelBar"></span></div>
+      <button class="ghost source-btn" id="btnSource" title="切换收听来源">电脑声音</button>
+      <div class="home-status">
+        <button class="home-chip auto-chip" id="btnAutoAnswer" type="button" aria-pressed="false" title="自动回答">
+          <span class="auto-led"></span>
+          <span>自动</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="control-bar written-bar hidden" id="writtenBar">
+      <button class="primary" id="btnWrittenCapture">截取题目</button>
+      <button class="ghost source-btn" id="btnWrittenPhone" title="手机扫码看答案">手机扫码</button>
+      <label class="bar-select" title="答案显示位置">
+        <select id="writtenTargetQuick" aria-label="答案显示位置">
+          <option value="both">双屏</option>
+          <option value="pc">电脑</option>
+          <option value="phone">手机</option>
+        </select>
+      </label>
+      <div class="home-status">
+        <button class="mini" id="btnWrittenClear" type="button" title="清空截图记录">清空</button>
+      </div>
+    </section>
+
+    <section class="confirm-bar hidden" id="confirmBar">
+      <span class="confirm-text" id="confirmText"></span>
+      <div class="confirm-actions">
+        <button class="mini" id="confirmCancel" type="button">取消</button>
+        <button class="mini danger-mini" id="confirmOk" type="button">确认</button>
+      </div>
+    </section>
+
+    <section class="notice hidden" id="notice">
+      <span class="notice-dot"></span>
+      <span class="notice-text" id="noticeText"></span>
+      <button class="mini" id="noticeAction">去处理</button>
+    </section>
+
+    <section class="announce hidden" id="announce">
+      <span class="announce-text" id="announceText"></span>
+      <button class="mini" id="btnAnnounceClose">知道了</button>
+    </section>
+
+    <section class="idle-hero" id="idleHero">
+      <div class="idle-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path d="M5 10v4M8.5 7v10M12 4.5v15M15.5 7v10M19 10v4"></path>
+        </svg>
+      </div>
+      <button class="primary idle-start" id="btnIdleStart" type="button">开始听面试官</button>
+      <div class="idle-row">
+        <button class="idle-chip" id="btnIdleSource" type="button">电脑声音</button>
+        <button class="idle-chip" id="btnIdleAuto" type="button" aria-pressed="false">
+          <span class="idle-led"></span>自动回答
+        </button>
+      </div>
+      <button class="idle-skip" id="btnIdleSkip" type="button">稍后再说<span aria-hidden="true">→</span></button>
+    </section>
+
+    <div class="stage" id="interviewStage">
+      <div class="stage-main">
+        <section class="panel transcript-panel">
+          <div class="panel-head">
+            <span class="panel-title">面试官</span>
+            <span class="panel-meta" id="asrMeta">未连接</span>
+          </div>
+          <div class="transcript" id="transcript">
+            <div class="empty">点「开始听面试官」，面试官说话会实时转成文字。</div>
+          </div>
+        </section>
+
+        <div class="splitter split-h" id="splitTranscript" title="拖动调整「面试官」与「建议回答」的高度"></div>
+
+        <section class="panel answer-panel">
+          <div class="panel-head">
+            <span class="panel-title">建议回答</span>
+            <span class="panel-meta" id="answerMeta"></span>
+            <div class="panel-tools">
+              <div class="tool-slot">
+                <button class="mini hidden" id="btnStop">停止生成</button>
+                <button class="mini" id="btnRegen">重新生成</button>
+              </div>
+              <button class="mini" id="btnCopy">复制</button>
+              <button class="mini" id="btnExport" title="把本次转写和问答导出为 txt">导出</button>
+              <button class="mini icon-mini" id="btnClear" title="清空所有题目和回答（Ctrl+Alt+K）" aria-label="清空">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 7h16"></path>
+                  <path d="M9 7V5.4c0-.5.4-.9.9-.9h4.2c.5 0 .9.4.9.9V7"></path>
+                  <path d="M6.5 7l.9 12.1c0 .5.4.9.9.9h7.4c.5 0 .9-.4.9-.9L17.5 7"></path>
+                  <path d="M10 11v5.5M14 11v5.5"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="qhead-row">
+            <div class="qhead empty-q" id="qhead">识别到问题后自动编号，点右侧 Q1/Q2 可回看</div>
+            <button class="mini hidden" id="btnEditQ" title="手动修改这道题的文字">改题</button>
+            <button class="mini hidden" id="btnDelQ" title="删除这道题">删除</button>
+          </div>
+          <div class="answer" id="answer">
+            <div class="empty">识别到问题后会自动生成，也可以点任意一条转写直接作答。</div>
+          </div>
+        </section>
+      </div>
+
+      <section class="written-stage hidden" id="writtenStage">
+        <div class="written-status hidden" id="writtenStatus">
+          <span class="written-spinner"></span>
+          <span id="writtenStatusText"></span>
+        </div>
+
+        <div class="written-empty" id="writtenEmpty">
+          <div class="written-empty-mark">⌘</div>
+          <div class="written-empty-title">按 Alt+Shift+A 框选题目</div>
+          <div class="written-empty-sub">支持选择题、代码、数学公式；识别后可修改再重答。</div>
+          <button class="primary" id="btnWrittenEmptyCapture" type="button">截取题目</button>
+        </div>
+
+        <div class="written-current hidden" id="writtenCurrent">
+          <div class="written-card">
+            <div class="written-card-head">
+              <span>题目</span>
+              <span class="written-no hidden" id="writtenNo"></span>
+            </div>
+            <div class="written-ocr" id="writtenOcr" tabindex="0" title="点击修改题目"></div>
+            <textarea class="written-edit hidden" id="writtenEditText" spellcheck="false"></textarea>
+            <div class="written-edit-actions hidden" id="writtenEditActions">
+              <button class="mini" id="btnWrittenEditCancel" type="button">取消</button>
+              <button class="mini primary-mini" id="btnWrittenEditSave" type="button">保存并重答</button>
+            </div>
+          </div>
+
+          <div class="written-card written-answer-card">
+            <div class="written-card-head">
+              <span>答案</span>
+              <span class="written-provider" id="writtenProvider"></span>
+            </div>
+            <div class="written-answer" id="writtenAnswer"></div>
+            <div class="written-actions">
+              <button class="mini" id="btnWrittenCopy" type="button">复制</button>
+              <button class="mini" id="btnWrittenRetry" type="button">重新回答</button>
+              <button class="mini" id="btnWrittenPush" type="button">推送到手机</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="splitter split-v" id="splitRail" title="拖动调整题目栏宽度"></div>
+
+      <aside class="qrail">
+        <div class="qrail-head">
+          <span>题目</span>
+          <button class="qrail-add hidden" id="btnRailCapture" type="button" title="截取题目">＋</button>
+        </div>
+        <div class="qrail-body" id="qrailBody">
+          <div class="qrail-list" id="qrailList">
+            <div class="qrail-empty">Q</div>
+          </div>
+        </div>
+        <div class="account-dock" id="accountDock">
+          <button class="account-avatar" id="qrailUser" type="button" aria-label="账号" aria-expanded="false">
+            <span class="avatar" id="qrailAvatar">访</span>
+          </button>
+          <div class="account-menu hidden" id="accountMenu">
+            <div class="account-menu-head">
+              <span class="account-led" id="accountLed"></span>
+              <span class="account-menu-balance" id="userMenuBalance"></span>
+            </div>
+            <div class="account-menu-list" id="accountMenuList"></div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+  </div>
+
+  <div class="auth-gate hidden" id="authGate">
+    <div class="auth-head">
+      <div class="brand">
+        <span class="dot" id="authDot"></span>
+        <span class="brand-name">应声面试</span>
+        <span class="brand-sub">官方接入</span>
+      </div>
+      <div class="win-btns">
+        <button class="icon-btn" id="btnAuthClose" title="返回主界面">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+        </button>
+        <button class="icon-btn" id="btnAuthHide" title="隐藏（Ctrl+Alt+H）">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"></path></svg>
+        </button>
+        <button class="icon-btn danger" id="btnAuthQuit" title="退出">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+        </button>
+      </div>
+    </div>
+    <div class="auth-body">
+      <div class="auth-hero">
+        <div class="auth-title" id="authHeroTitle">先登录，再开始</div>
+        <div class="auth-desc" id="authHeroDesc">登录后即可使用，不用配置任何模型；按实际使用时长扣费，停止收音即停止计费。</div>
+      </div>
+
+      <div class="auth-pane" id="authLoginPane">
+        <div class="auth-tabs">
+          <button class="mini active" id="btnAuthTabEmail" type="button">邮箱登录</button>
+          <button class="mini hidden" id="btnAuthTabPhone" type="button">手机号登录</button>
+        </div>
+        <div id="authEmailPane">
+          <label>邮箱 <input id="authEmail" type="email" placeholder="you@example.com" autocomplete="off" /></label>
+          <label>密码 <input id="authPassword" type="password" placeholder="至少 6 位" autocomplete="off" /></label>
+          <label class="hidden" id="authInviteRow">邀请码（可选）<input id="authInvite" placeholder="填了双方都多送时长" autocomplete="off" /></label>
+          <div class="auth-actions">
+            <button class="primary" id="btnAuthLogin">登录</button>
+            <button class="ghost" id="btnAuthRegister">注册</button>
+          </div>
+          <div class="auth-error hidden" id="authError"></div>
+        </div>
+        <div id="authPhonePane" class="hidden">
+          <label>手机号 <input id="authPhone" inputmode="tel" placeholder="13800138000" autocomplete="off" /></label>
+          <label>验证码
+            <div class="auth-inline">
+              <input id="authSmsCode" inputmode="numeric" placeholder="6 位验证码" autocomplete="off" />
+              <button class="mini" type="button" id="btnSendSms">获取验证码</button>
+            </div>
+          </label>
+          <div class="auth-actions">
+            <button class="primary" id="btnSmsLogin">登录 / 注册</button>
+          </div>
+          <div class="auth-error hidden" id="authPhoneError"></div>
+        </div>
+        <p class="auth-note">注册即送 5 分钟体验，之后可用时长码续时。</p>
+        <div class="auth-actions">
+          <button class="ghost hidden" id="btnForgotPassword" type="button">忘记密码</button>
+        </div>
+      </div>
+
+      <div class="auth-pane hidden" id="authResetPane">
+        <div class="auth-hero">
+          <div class="auth-title">用手机号重置密码</div>
+          <div class="auth-desc">验证码会发到注册手机号；重置成功后用新密码登录。</div>
+        </div>
+        <label>手机号 <input id="resetPhone" inputmode="tel" placeholder="13800138000" autocomplete="off" /></label>
+        <label>验证码
+          <div class="auth-inline">
+            <input id="resetCode" inputmode="numeric" placeholder="6 位验证码" autocomplete="off" />
+            <button class="mini" type="button" id="btnResetSend">获取验证码</button>
+          </div>
+        </label>
+        <label>新密码 <input id="resetPasswordInput" type="password" placeholder="至少 6 位" autocomplete="off" /></label>
+        <div class="auth-actions">
+          <button class="primary" id="btnDoReset">重置密码</button>
+          <button class="ghost" id="btnBackLogin">返回登录</button>
+        </div>
+        <div class="auth-error hidden" id="resetError"></div>
+      </div>
+
+      <div class="auth-pane hidden" id="authBalancePane">
+        <div class="auth-account">
+          <div class="auth-account-email" id="authEmailLabel">-</div>
+          <div class="auth-account-sub" id="authBalanceLabel">正在同步剩余时长…</div>
+        </div>
+        <label>时长码
+          <div class="auth-inline">
+            <input id="authCode" placeholder="PRO-XXXX-XXXX" autocomplete="off" />
+            <button class="primary" id="btnAuthRedeem">兑换</button>
+          </div>
+        </label>
+        <div class="auth-error hidden" id="authBalanceError"></div>
+
+        <!-- 支付入口：后端已支持在线/人工两种通道，产品决定暂不露出，由 PAY_UI_ENABLED 控制 -->
+        <div class="purchase-entry hidden" id="purchaseEntry">
+          <button class="primary" id="btnBuyMinutes">购买时长</button>
+        </div>
+        <div class="purchase-pane hidden" id="purchasePane">
+          <div class="purchase-head">
+            <span class="purchase-title">购买时长</span>
+            <button class="mini" id="btnPurchaseBack">返回兑换</button>
+          </div>
+          <div class="plan-list" id="planList"></div>
+          <div class="purchase-pay hidden" id="purchasePay">
+            <div class="purchase-qr" id="purchaseQr"></div>
+            <div class="purchase-status" id="purchaseStatus"></div>
+            <div class="purchase-actions">
+              <button class="ghost" id="btnOpenPayPage">在浏览器打开</button>
+              <button class="ghost" id="btnCheckPaid">我已支付</button>
+              <button class="ghost" id="btnCancelPay">返回套餐</button>
+            </div>
+          </div>
+          <div class="auth-error hidden" id="purchaseError"></div>
+          <div class="purchase-note" id="purchaseNote"></div>
+        </div>
+
+        <div class="auth-actions">
+          <button class="ghost" id="btnAuthRefresh">刷新状态</button>
+          <button class="ghost" id="btnAuthLogout">退出登录</button>
+        </div>
+        <p class="auth-note">时长用完会暂停使用；兑换新的时长码即可继续，未用完的时长会累加保留。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sheet hidden" id="settings">
+    <div class="sheet-head">
+      <div class="sheet-title">
+        <span>设置</span>
+      </div>
+      <button class="icon-btn" id="btnCloseSettings">✕</button>
+    </div>
+
+    <nav class="tabs" id="settingsTabs">
+      <button class="tab active" data-tab="engine">语音识别</button>
+      <button class="tab" data-tab="llm">大模型</button>
+      <button class="tab" data-tab="profile">个人资料</button>
+      <button class="tab" data-tab="appearance">界面</button>
+      <button class="tab" data-tab="written">笔试</button>
+      <button class="tab" data-tab="account">账号与时长</button>
+    </nav>
+
+    <div class="sheet-body">
+      <div class="tab-panel" data-panel="engine">
+        <div class="segmented" id="asrMode">
+          <button type="button" class="seg active" data-provider="llama">
+            <strong>本机识别</strong>
+            <span>延迟低 · 面试更稳</span>
+          </button>
+          <button type="button" class="seg" data-provider="cloud">
+            <strong>云端识别</strong>
+            <span>免下载 · 兼容性好</span>
+          </button>
+          <button type="button" class="seg" data-provider="own">
+            <strong>自定义 Key</strong>
+            <span>高级 · 自备识别服务</span>
+          </button>
+        </div>
+        <select id="asrProvider" class="visually-hidden">
+          <option value="llama">本地</option>
+          <option value="cloud">云端</option>
+          <option value="own">自定义</option>
+        </select>
+
+        <div id="llamaFields">
+          <div class="card model-card">
+            <div class="card-head">
+              <div>
+                <div class="card-title">识别模型</div>
+                <div class="card-sub" id="localSummary">正在检查模型…</div>
+              </div>
+              <span class="pill" id="localPill">检测中</span>
+            </div>
+
+            <label class="model-picker">
+              <span class="model-picker-label">模型大小</span>
+              <select id="modelTier" class="model-select"></select>
+            </label>
+            <div class="tier-hint" id="tierHint"></div>
+
+            <div class="progress-row hidden" id="assetProgress">
+              <div class="progress"><span id="assetBar"></span></div>
+              <span class="progress-text" id="assetProgressText"></span>
+            </div>
+
+            <div class="card-actions">
+              <button class="mini primary-mini" id="btnDownloadAll">下载此模型</button>
+              <button class="mini hidden" id="btnCancelDownload">取消下载</button>
+              <button class="mini" id="btnWarmup">预热 / 自检</button>
+              <button class="mini" id="btnOpenRuntime">打开目录</button>
+            </div>
+            <div class="meta" id="warmupMeta"></div>
+            <div class="meta engine-meta" id="engineMeta"></div>
+            <p class="hint-text">模型分小 / 中 / 大三档，会按本机内存推荐。下载一次后自动生效，之后识别走本机，延迟低、不占网络。</p>
+          </div>
+
+          <details class="advanced">
+            <summary>高级：自定义引擎与模型路径</summary>
+            <label>llama-server.exe <input id="asrBin" placeholder="留空则使用应用内下载的引擎" /></label>
+            <label>模型 .gguf <input id="asrModelPath" placeholder="留空则使用应用内下载的模型" /></label>
+            <label>mmproj .gguf <input id="asrMmproj" placeholder="留空则使用应用内下载的投影文件" /></label>
+            <label>端口 <input id="asrPort" type="number" min="1024" max="65535" /></label>
+          </details>
+        </div>
+
+        <div id="cloudFields" class="hidden">
+          <div class="card">
+            <div class="card-title">云端识别</div>
+            <div class="card-sub">无需下载，登录后即可使用；本机模型不可用时自动切换到这里。</div>
+          </div>
+        </div>
+
+        <div id="ownFields" class="hidden">
+          <div class="card">
+            <div class="card-title">自定义识别</div>
+            <label>接口地址 <input id="asrBaseUrl" placeholder="https://api.openai.com/v1" autocomplete="off" /></label>
+            <label>API Key <input id="asrApiKey" type="password" placeholder="sk-..." autocomplete="off" /></label>
+            <label>模型 <input id="asrModel" placeholder="whisper-1" autocomplete="off" /></label>
+            <div class="card-sub">兼容 OpenAI 的 /audio/transcriptions 接口；保存后点下方「试音 5 秒」验证。</div>
+          </div>
+        </div>
+
+        <h3>收音</h3>
+        <label>输入设备（麦克风）
+          <select id="audioInputDevice">
+            <option value="">系统默认</option>
+          </select>
+        </label>
+        <label>输出设备
+          <select id="audioOutputDevice">
+            <option value="">系统默认</option>
+          </select>
+        </label>
+        <div class="test-row">
+          <button type="button" class="mini" id="btnTestOutput">试听输出</button>
+        </div>
+        <p class="hint-text">输入设备只对「麦克风」来源生效。使用「电脑声音」时，Windows 只采集系统默认播放设备；如果面试声音走耳机或外接音箱，请先在系统声音里把它设为默认。输出设备用于「试听输出」。</p>
+        <label>灵敏度 <input id="audioSensitivity" type="range" min="0.004" max="0.05" step="0.002" /></label>
+        <label>断句静音（毫秒） <input id="audioSilence" type="number" step="50" min="300" max="2000" /></label>
+        <label>识别语言
+          <select id="asrLanguage">
+            <option value="auto">自动（中英混合）</option>
+            <option value="zh">中文</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+        <label class="check"><input id="autoAnswer" type="checkbox" /> 识别到问题自动生成回答</label>
+        <div class="test-row">
+          <button type="button" class="mini" id="btnTestMic">试音 5 秒</button>
+          <div class="test-meter"><span id="micTestBar"></span></div>
+        </div>
+        <p class="hint-text">点「试音」对着麦克风说话，条子明显跳动说明能收到声音。语速慢或停顿多时，把断句静音调到 1000–1500 毫秒（慢语速）；默认 650 毫秒更快出字。每条转写都能点击作答。</p>
+      </div>
+
+      <div class="tab-panel hidden" data-panel="llm">
+        <div class="card">
+          <div class="card-title">大模型接入</div>
+          <div class="segmented" id="llmMode">
+            <button type="button" class="seg active" data-mode="official">
+              <strong>官方接入</strong>
+              <span>登录即用 · 按时长计费</span>
+            </button>
+            <button type="button" class="seg" data-mode="own">
+              <strong>自定义 Key</strong>
+              <span>高级 · 免费 · 自备模型</span>
+            </button>
+          </div>
+          <div class="card-sub" id="llmOfficialFields">登录账号后即可使用官方接入，默认方案，无需填写 Key。</div>
+          <div id="llmOwnFields" class="hidden">
+            <label>接口地址 <input id="llmBaseUrl" placeholder="https://api.openai.com/v1" autocomplete="off" /></label>
+            <label>API Key <input id="llmApiKey" type="password" placeholder="sk-..." autocomplete="off" /></label>
+            <label>模型 <input id="llmModel" placeholder="gpt-4o-mini" autocomplete="off" /></label>
+            <div class="card-actions">
+              <button type="button" class="mini" id="btnLlmModels">获取可用模型</button>
+            </div>
+            <div class="card-sub" id="llmModelHint">兼容 OpenAI 的接口：填到 /v1 为止，模型名按服务商文档填写。</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">回答复杂度</div>
+          <input id="llmAnswerDetail" type="range" min="1" max="5" step="1" value="3" />
+          <div class="range-labels" id="llmAnswerDetailScale">
+            <span>极简</span><span>简洁</span><span>标准</span><span>详细</span><span>深入</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <label class="check"><input id="llmAnswerOral" type="checkbox" /> 口语直读模式</label>
+          <p class="hint-text">开启后去掉列表符号和书面过渡语，用短句口语输出，可以直接照着念；关闭时保持原来的结构化回答。与回答复杂度互不影响。</p>
+        </div>
+      </div>
+
+      <div class="tab-panel hidden" data-panel="profile">
+        <div class="card hotword-card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">岗位热词</div>
+              <div class="card-sub">点词库整套加入或移除，输入新词回车添加</div>
+            </div>
+            <div class="hotword-head-actions">
+              <span class="hotword-count" id="hotwordCount">0 / 60</span>
+              <button type="button" class="mini" id="btnClearHotwords">清空</button>
+            </div>
+          </div>
+          <div class="hotword-search">
+            <input id="hotwordSearch" placeholder="搜索岗位或热词库，回车新建" autocomplete="off" />
+            <button type="button" class="mini" id="btnImportHotwordLib">导入</button>
+          </div>
+          <div class="hotword-suggest hidden" id="hotwordSuggest"></div>
+          <div class="hotword-libs" id="hotwordLibs"></div>
+          <div class="hotword-tags" id="hotwordTags">
+            <input id="hotwordInput" class="hotword-inline-input" placeholder="输入热词，回车添加" autocomplete="off" />
+          </div>
+          <input type="file" id="hotwordImportFile" accept=".json,.txt" class="visually-hidden" />
+        </div>
+
+        <p class="hint-text top-tip">填得越具体，生成的回答越贴合你的真实经历。背景只在生成回答时使用，不会上传到模型服务之外的地方。</p>
+        <label>岗位 / 面试背景 <textarea id="profileJob" rows="4" placeholder="应聘岗位、公司、行业、面试轮次、JD 要点"></textarea></label>
+        <label>简历要点
+          <div class="upload-row">
+            <button type="button" class="mini" id="btnUploadResume">上传简历识别</button>
+            <span class="upload-hint" id="resumeHint">支持 txt / md / docx / pdf</span>
+          </div>
+          <textarea id="profileResume" rows="8" placeholder="上传简历自动填入，也可以粘贴经历、技能、量化成果"></textarea>
+        </label>
+        <label>考试大纲
+          <div class="upload-row">
+            <button type="button" class="mini" id="btnUploadSyllabus">上传大纲识别</button>
+            <span class="upload-hint" id="syllabusHint">支持 txt / md / docx / pdf</span>
+          </div>
+          <textarea id="profileSyllabus" rows="6" placeholder="上传考试大纲，或粘贴考试范围、题型、重点知识点"></textarea>
+        </label>
+      </div>
+
+      <div class="tab-panel hidden" data-panel="appearance">
+        <label>界面主题
+          <select id="uiTheme">
+            <option value="light">白色</option>
+            <option value="dark">深色</option>
+          </select>
+        </label>
+        <label>不透明度 <input id="uiOpacity" type="range" min="0.4" max="1" step="0.01" /></label>
+        <label class="check"><input id="contentProtect" type="checkbox" /> 防录屏隐身（屏幕共享里看不见）</label>
+
+        <div class="hotkey-block">
+          <h3>快捷键</h3>
+          <div class="kv hotkey-row"><span>打开悬浮窗 / 回主窗</span><input class="hotkey-input" data-hotkey="mini" readonly /></div>
+          <div class="kv hotkey-row"><span>唤出悬浮控制</span><input class="hotkey-input" data-hotkey="reveal" readonly /></div>
+          <div class="kv hotkey-row"><span>上一题</span><input class="hotkey-input" data-hotkey="prev" readonly /></div>
+          <div class="kv hotkey-row"><span>下一题</span><input class="hotkey-input" data-hotkey="next" readonly /></div>
+          <div class="kv hotkey-row"><span>显示 / 隐藏</span><input class="hotkey-input" data-hotkey="hide" readonly /></div>
+          <div class="kv hotkey-row"><span>对当前题目作答</span><input class="hotkey-input" data-hotkey="ask" readonly /></div>
+          <div class="kv hotkey-row"><span>清空记录</span><input class="hotkey-input" data-hotkey="clear" readonly /></div>
+          <p class="hotkey-tip">点击输入框后按下组合键；Esc 取消，Backspace 清空。</p>
+        </div>
+
+        <details class="advanced">
+          <summary>高级</summary>
+
+          <h3>应用信息</h3>
+          <div class="kv"><span>版本</span><code id="appVersion">-</code></div>
+          <div class="kv"><span>版本更新</span><button class="mini" id="btnCheckUpdate">检查更新</button></div>
+          <div class="kv"><span>运行平台</span><code id="appPlatform">-</code></div>
+          <div class="kv"><span>数据目录</span><button class="mini" id="btnOpenData">打开</button></div>
+          <div class="kv"><span>日志目录</span><button class="mini" id="btnOpenLogs">打开</button></div>
+          <div class="kv"><span>初始化引导</span><button class="mini" id="btnReopenOnboarding">重新运行</button></div>
+          <div class="kv"><span>配置管理</span>
+            <div class="auth-inline">
+              <button class="mini" id="btnExportConfig">导出</button>
+              <button class="mini" id="btnImportConfig">导入</button>
+              <button class="mini" id="btnResetConfig">恢复默认</button>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <div class="tab-panel hidden" data-panel="written">
+        <div class="card">
+          <div class="card-title">识别路线</div>
+          <label>识别引擎
+            <select id="writtenOcrEngine">
+              <option value="windows">Windows 自带（无需下载）</option>
+              <option value="indra">Indra OCR（更准，首次约 30 MB）</option>
+              <option value="custom">自定义视觉模型（自带 Key）</option>
+            </select>
+          </label>
+          <div class="card-sub" id="writtenEngineStatus">使用系统自带 OCR，离线、无需下载。</div>
+          <div class="card-row"><button class="mini" id="btnIndraDownload" type="button">下载 / 校验模型</button></div>
+          <div id="writtenCustomFields" class="hidden">
+            <label>接口地址 <input id="writtenCustomBase" placeholder="https://api.openai.com/v1" autocomplete="off" /></label>
+            <label>API Key <input id="writtenCustomKey" type="password" placeholder="sk-..." autocomplete="off" /></label>
+            <label>模型 <input id="writtenCustomModel" placeholder="gpt-4o-mini" autocomplete="off" /></label>
+            <div class="card-sub">用支持图片输入的 OpenAI 兼容模型识别截图；识别失败会退回系统 OCR，不会走官方云端。</div>
+          </div>
+          <label>优先方式
+            <select id="writtenOcrMode">
+              <option value="auto">自动：本地优先，复杂题走云端</option>
+              <option value="local">只走本地 OCR</option>
+              <option value="cloud">优先云端视觉</option>
+            </select>
+          </label>
+          <div class="card-sub">本地 OCR 离线、免费，适合纯文字题；代码、公式和复杂排版建议云端视觉。</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">答案显示</div>
+          <label>显示位置
+            <select id="writtenAnswerTarget">
+              <option value="both">电脑悬浮窗 + 手机</option>
+              <option value="pc">只显示在电脑</option>
+              <option value="phone">只推到手机</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="card">
+          <div class="card-title">快捷键</div>
+          <div class="kv hotkey-row"><span>框选截图</span><input class="hotkey-input" data-hotkey="capture" readonly /></div>
+          <div class="kv hotkey-row"><span>显示 / 隐藏答案</span><input class="hotkey-input" data-hotkey="answer" readonly /></div>
+          <p class="hotkey-tip">点击输入框后按下组合键；Esc 取消，Backspace 清空。</p>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">手机副屏</div>
+              <div class="card-sub">同一 Wi-Fi 下扫码，电脑截图，手机看答案。</div>
+            </div>
+          </div>
+          <div class="phone-box">
+            <img class="phone-qr hidden" id="phoneQr" alt="手机副屏二维码" />
+            <div class="phone-info">
+              <code id="phoneUrl">未开启</code>
+              <div class="card-actions">
+                <button class="mini primary-mini" id="btnPhoneStart" type="button">生成二维码</button>
+                <button class="mini" id="btnPhoneStop" type="button">关闭</button>
+              </div>
+            </div>
+          </div>
+          <p class="hint-text">首次开启时 Windows 可能弹出防火墙提示，允许“专用网络”即可。</p>
+        </div>
+      </div>
+
+      <div class="tab-panel hidden" data-panel="account">
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title" id="accountEmail">未登录</div>
+              <div class="card-sub" id="accountSub">登录后按使用时长计费</div>
+            </div>
+            <span class="pill" id="accountPill">未登录</span>
+          </div>
+          <div class="kv"><span>剩余时长</span><code id="accountBalance">-</code></div>
+          <div class="kv"><span>计费标准</span><code id="accountPricing">以服务端计费为准</code></div>
+          <div class="kv"><span>本次计时</span><code id="accountUsage">未开始</code></div>
+          <div class="kv"><span>连接状态</span><code id="accountNetwork">-</code></div>
+        </div>
+        <label>时长码
+          <div class="auth-inline">
+            <input id="accountCode" placeholder="PRO-XXXX-XXXX" autocomplete="off" />
+            <button type="button" class="mini primary-mini" id="btnAccountRedeem">兑换</button>
+          </div>
+        </label>
+        <div class="auth-error hidden" id="accountError"></div>
+        <div class="card-actions">
+          <button type="button" class="mini" id="btnOpenAuth">登录账号</button>
+          <button type="button" class="mini" id="btnAccountRefresh">刷新状态</button>
+          <button type="button" class="mini" id="btnAccountLogout">退出登录</button>
+        </div>
+
+        <h3>邀请与账号</h3>
+        <div class="kv"><span>我的邀请码</span>
+          <div class="auth-inline">
+            <code id="accountInvite">-</code>
+            <button type="button" class="mini" id="btnCopyInvite">复制</button>
+          </div>
+        </div>
+        <div class="kv"><span>邀请进度</span><code id="accountInviteProgress">-</code></div>
+        <div class="card-actions">
+          <!-- 后端账号安全接口（导出/改密/注销）尚未上线，先隐藏；接口就绪后去掉 hidden 即可 -->
+          <button type="button" class="mini hidden" id="btnAccountExport">导出账号数据</button>
+          <button type="button" class="mini hidden" id="btnAccountPassword">修改密码</button>
+          <button type="button" class="mini hidden" id="btnAccountDelete">注销账号</button>
+        </div>
+        <div class="auth-error hidden" id="accountSecurityError"></div>
+
+        <div class="hidden" id="passwordPane">
+          <label>原密码 <input id="oldPassword" type="password" placeholder="邮箱账号填写" autocomplete="off" /></label>
+          <label>新密码 <input id="newPassword" type="password" placeholder="至少 6 位" autocomplete="off" /></label>
+          <div class="card-actions">
+            <button type="button" class="mini primary-mini" id="btnConfirmPassword">确认修改</button>
+            <button type="button" class="mini" id="btnCancelPassword">取消</button>
+          </div>
+        </div>
+
+        <div class="hidden" id="deletePane">
+          <p class="hint-text">注销后账号脱敏、Key 作废，历史订单与流水保留用于对账，且不可恢复。请输入完整邮箱与密码确认。</p>
+          <label>账号邮箱 <input id="deleteEmail" placeholder="完整邮箱" autocomplete="off" /></label>
+          <label>密码 <input id="deletePassword" type="password" autocomplete="off" /></label>
+          <div class="card-actions">
+            <button type="button" class="mini danger-mini" id="btnConfirmDelete">确认注销</button>
+            <button type="button" class="mini" id="btnCancelDelete">取消</button>
+          </div>
+        </div>
+
+        <p class="hint-text">官方接入按实际使用时长（分钟）扣费，换电脑登录同一账号余额保留。</p>
+      </div>
+    </div>
+
+    <div class="sheet-foot">
+      <button class="ghost" id="btnCancelSettings">取消</button>
+      <button class="primary" id="btnSaveSettings">保存</button>
+    </div>
+  </div>
+
+  <div class="sheet hidden" id="onboarding">
+    <div class="sheet-head">
+      <div class="sheet-title">
+        <span>首次初始化</span>
+        <span class="sheet-sub" id="obStepLabel">第 1 步 / 共 4 步</span>
+      </div>
+      <button class="icon-btn" id="btnCloseOnboarding" title="稍后再说">✕</button>
+    </div>
+
+    <div class="sheet-body">
+      <div class="ob-intro">
+        <div class="ob-title" id="obTitle">先准备语音识别</div>
+        <div class="ob-desc" id="obDesc">引擎已随安装包内置。模型分小/中/大三档（约 0.9–4.4 GB），会按本机内存推荐一档，也可以先用云端识别。</div>
+      </div>
+      <div class="ob-steps">
+        <span class="ob-step active" data-step="1"></span>
+        <span class="ob-step" data-step="2"></span>
+        <span class="ob-step" data-step="3"></span>
+        <span class="ob-step" data-step="4"></span>
+      </div>
+
+      <div class="ob-pane" data-pane="1">
+        <div class="segmented" id="obAsrMode">
+          <button type="button" class="seg active" data-provider="llama">
+            <strong>本机识别</strong>
+            <span>延迟低 · 面试更稳</span>
+          </button>
+          <button type="button" class="seg" data-provider="cloud">
+            <strong>云端识别</strong>
+            <span>免下载 · 兼容性好</span>
+          </button>
+          <button type="button" class="seg" data-provider="own">
+            <strong>自定义 Key</strong>
+            <span>高级 · 自备识别服务</span>
+          </button>
+        </div>
+
+        <div id="obLocalFields">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <div class="card-title">本地运行文件</div>
+                <div class="card-sub" id="obLocalSummary">正在检查运行环境…</div>
+              </div>
+              <span class="pill" id="obPill">检测中</span>
+            </div>
+            <div class="tier-row">
+              <label for="obModelTier">模型档位</label>
+              <select id="obModelTier"></select>
+            </div>
+            <div class="asset-list" id="obAssetList">
+              <div class="asset-empty">正在读取资源状态…</div>
+            </div>
+            <div class="progress-row hidden" id="obProgress">
+              <div class="progress"><span id="obBar"></span></div>
+              <span class="progress-text" id="obProgressText"></span>
+            </div>
+            <div class="card-actions">
+              <button class="mini primary-mini" id="obDownloadAll">下载本机识别模型</button>
+              <button class="mini hidden" id="obCancelDownload">取消下载</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="obCloudFields" class="hidden">
+          <div class="card">
+            <div class="card-title">云端识别</div>
+            <div class="card-sub">无需下载，登录后即可使用。设置里随时可以切回本机识别。</div>
+          </div>
+        </div>
+
+        <div id="obOwnFields" class="hidden">
+          <div class="card">
+            <div class="card-title">自定义识别</div>
+            <label>接口地址 <input id="obAsrBaseUrl" placeholder="https://api.openai.com/v1" autocomplete="off" /></label>
+            <label>API Key <input id="obAsrApiKey" type="password" placeholder="sk-..." autocomplete="off" /></label>
+            <label>模型 <input id="obAsrModel" placeholder="whisper-1" autocomplete="off" /></label>
+            <div class="card-sub">兼容 OpenAI 的 /audio/transcriptions 接口，不经过官方，也不扣官方时长。</div>
+          </div>
+        </div>
+
+        <p class="hint-text" id="obHardware"></p>
+      </div>
+
+      <div class="ob-pane hidden" data-pane="2">
+        <p class="hint-text top-tip">选择最接近的岗位，会自动补充该岗位的高频专业词，提升识别准确率；不确定可以选「通用」。</p>
+        <div class="job-grid" id="obJobGrid">
+          <button type="button" class="job-card" data-job="前端"><strong>前端</strong><span>React · Vue · TypeScript</span></button>
+          <button type="button" class="job-card" data-job="后端"><strong>后端</strong><span>Java · Spring Boot · MySQL</span></button>
+          <button type="button" class="job-card" data-job="算法"><strong>算法</strong><span>机器学习 · Transformer</span></button>
+          <button type="button" class="job-card" data-job="测试"><strong>测试</strong><span>自动化 · 接口测试</span></button>
+          <button type="button" class="job-card" data-job="产品"><strong>产品</strong><span>PRD · 用户增长</span></button>
+          <button type="button" class="job-card" data-job="数据"><strong>数据</strong><span>SQL · Hive · Spark</span></button>
+          <button type="button" class="job-card" data-job="运维"><strong>运维</strong><span>K8s · Docker · CI/CD</span></button>
+          <button type="button" class="job-card" data-job="通用"><strong>通用</strong><span>行为面 · 通用表达</span></button>
+        </div>
+        <p class="hint-text">选中的岗位词库会立即写入识别热词；下一步还可以补充具体公司、行业和面试背景。</p>
+      </div>
+
+      <div class="ob-pane hidden" data-pane="3">
+        <p class="hint-text top-tip">可选。填得越具体，生成的回答越贴合你的真实经历；上传简历会自动识别成文字。</p>
+        <label>岗位 / 面试背景 <textarea id="obProfileJob" rows="3" placeholder="应聘岗位、公司、行业、面试轮次、JD 要点"></textarea></label>
+        <label>简历要点
+          <div class="upload-row">
+            <button type="button" class="mini" id="obUploadResume">上传简历识别</button>
+            <span class="upload-hint" id="obResumeHint">支持 txt / md / docx / pdf</span>
+          </div>
+          <textarea id="obProfileResume" rows="5" placeholder="上传简历自动填入，也可以直接粘贴"></textarea>
+        </label>
+        <label>考试大纲
+          <div class="upload-row">
+            <button type="button" class="mini" id="obUploadSyllabus">上传大纲识别</button>
+            <span class="upload-hint" id="obSyllabusHint">支持 txt / md / docx / pdf</span>
+          </div>
+          <textarea id="obProfileSyllabus" rows="4" placeholder="可上传考试大纲，或直接粘贴考试范围与题型"></textarea>
+        </label>
+      </div>
+
+      <div class="ob-pane hidden" data-pane="4">
+        <div class="card">
+          <div class="card-title">大模型接入</div>
+          <div class="segmented" id="obLlmMode">
+            <button type="button" class="seg active" data-mode="official">
+              <strong>官方接入</strong>
+              <span>登录即用 · 默认</span>
+            </button>
+            <button type="button" class="seg" data-mode="own">
+              <strong>自定义 Key</strong>
+              <span>高级 · 免费 · 自备模型</span>
+            </button>
+          </div>
+          <div id="obLlmOfficialFields" class="card-sub">登录账号后即可使用官方接入，按实际使用时长扣费。</div>
+          <div id="obLlmOwnFields" class="hidden">
+            <label>接口地址 <input id="obLlmBaseUrl" placeholder="https://api.openai.com/v1" autocomplete="off" /></label>
+            <label>API Key <input id="obLlmApiKey" type="password" placeholder="sk-..." autocomplete="off" /></label>
+            <label>模型 <input id="obLlmModel" placeholder="gpt-4o-mini" autocomplete="off" /></label>
+            <div class="card-sub">兼容 OpenAI 的 /chat/completions 接口；用自己的 Key 不需要登录。</div>
+          </div>
+        </div>
+
+        <div class="card" id="obOfficialCard">
+          <div class="card-head">
+            <div>
+              <div class="card-title">官方账号</div>
+              <div class="card-sub" id="obAuthSummary">未登录</div>
+            </div>
+            <span class="pill" id="obAuthPill">未登录</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sheet-foot">
+      <button class="ghost" id="obSkip">稍后再说</button>
+      <button class="ghost hidden" id="obPrev">上一步</button>
+      <button class="primary" id="obNext">下一步</button>
+    </div>
+  </div>
+
+  <div class="sheet hidden" id="updateSheet">
+    <div class="sheet-head">
+      <div class="sheet-title">
+        <span id="updTitle">发现新版本</span>
+        <span class="sheet-sub" id="updVersion">-</span>
+      </div>
+      <button class="icon-btn" id="updClose" title="稍后再说">✕</button>
+    </div>
+
+    <div class="sheet-body">
+      <div class="ob-intro">
+        <div class="ob-title" id="updHeadline">有新版本可用</div>
+        <div class="ob-desc" id="updDesc">更新包含功能改进和问题修复，下载完成后会自动启动安装程序。</div>
+      </div>
+
+      <div class="card">
+        <div class="kv"><span>当前版本</span><code id="updCurrent">-</code></div>
+        <div class="kv"><span>最新版本</span><code id="updLatest">-</code></div>
+        <div class="kv"><span>安装包大小</span><code id="updSize">-</code></div>
+        <div class="kv"><span>发布时间</span><code id="updDate">-</code></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">更新内容</div>
+        <div class="card-sub update-notes" id="updNotes">-</div>
+      </div>
+
+      <div class="progress-row hidden" id="updProgressRow">
+        <div class="progress"><span id="updBar"></span></div>
+        <span class="progress-text" id="updProgressText"></span>
+      </div>
+      <p class="hint-text" id="updHint">建议在面试开始前更新，安装过程会关闭当前应用。</p>
+    </div>
+
+    <div class="sheet-foot">
+      <button class="ghost" id="updLater">稍后</button>
+      <button class="primary" id="updAction">立即更新</button>
+    </div>
+  </div>
+
+  <div class="qr-modal hidden" id="phoneQrModal">
+    <div class="qr-modal-mask" data-close="1"></div>
+    <div class="qr-modal-card">
+      <div class="qr-modal-title">手机扫码看答案</div>
+      <img class="qr-modal-img" id="phoneQrModalImg" alt="手机副屏二维码" />
+      <code class="qr-modal-url" id="phoneQrModalUrl"></code>
+      <p class="qr-modal-tip">手机和电脑连同一个 Wi-Fi，扫码后答案会自动同步。</p>
+      <button class="primary" id="phoneQrModalClose" type="button">关闭</button>
+    </div>
+  </div>
+
+  <div class="toast hidden" id="toast"></div>
+  <div class="rail-preview hidden" id="railPreview"><img id="railPreviewImg" alt="" /></div>
+
+  <script src="audio.js"></script>
+  <script src="opus.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

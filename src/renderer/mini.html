@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+  <title>应声面试</title>
+  <link rel="stylesheet" href="mini.css" />
+</head>
+<body>
+  <div class="mini-shell">
+    <header class="mini-head">
+      <div class="mini-brand">
+        <span class="dot" id="statusDot"></span>
+        <span class="mini-name">应声面试</span>
+        <span class="mini-state" id="statusText">待机</span>
+      </div>
+      <button class="mini-icon return" id="btnLyrics" type="button" title="切换到歌词层" aria-label="切换到歌词层">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 6h16"></path>
+          <path d="M6 10h12"></path>
+          <path d="M4 14h16"></path>
+          <path d="M7 18h10"></path>
+        </svg>
+        <span>歌词</span>
+      </button>
+      <button class="mini-icon return" id="btnMain" type="button" title="回到主窗" aria-label="回到主窗">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 9V4h5"></path>
+          <path d="M20 15v5h-5"></path>
+          <path d="M4 4l6 6"></path>
+          <path d="M20 20l-6-6"></path>
+        </svg>
+        <span>主窗</span>
+      </button>
+    </header>
+
+    <div class="mini-meta">
+      <div class="mini-chip balance" id="balanceChip" title="连接状态">
+        <span class="led" id="balanceLed"></span>
+      </div>
+      <button class="mini-chip" id="btnSource" type="button" title="切换收听来源">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 9v6h3l5 4V5L7 9H4z"></path>
+          <path d="M16 9.5a3.5 3.5 0 0 1 0 5"></path>
+        </svg>
+        <span id="sourceText">电脑</span>
+      </button>
+      <button class="mini-chip auto" id="btnAuto" type="button" title="自动回答">
+        <span class="led" id="autoLed"></span>
+        <span>自动</span>
+      </button>
+      <button class="mini-chip shield" id="btnProtect" type="button" title="防录屏隐身">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 3l7 3v6c0 4.2-2.8 7.6-7 9-4.2-1.4-7-4.8-7-9V6l7-3z"></path>
+          <path class="shield-check" d="M8.8 12.1l2.1 2.1 4.3-4.3"></path>
+        </svg>
+      </button>
+    </div>
+
+    <div class="mini-controls">
+      <button class="primary" id="btnListen" type="button">开始收音</button>
+      <button class="ghost hidden" id="btnStop" type="button">停止生成</button>
+      <button class="mini-icon copy" id="btnCopy" type="button" title="复制回答" aria-label="复制回答">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="8" y="8" width="11" height="11" rx="2"></rect>
+          <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path>
+        </svg>
+      </button>
+    </div>
+
+    <div class="mini-question empty" id="question">等待面试官提问</div>
+    <div class="mini-answer empty" id="answer"><span class="empty">识别到问题后自动生成回答</span></div>
+  </div>
+
+  <script src="mini.js"></script>
+</body>
+</html>

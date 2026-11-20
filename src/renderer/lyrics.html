@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+  <title>应声面试</title>
+  <link rel="stylesheet" href="lyrics.css" />
+</head>
+<body>
+  <div class="lyrics-layer" id="layer">
+    <header class="control top" id="topBar">
+      <span class="grip" id="grip" aria-hidden="true"></span>
+      <div class="qnav">
+        <button class="chip-btn nav" id="qPrev" type="button" title="上一题">‹</button>
+        <button class="chip-btn qlabel" id="qLabel" type="button" title="选择题目">Q—</button>
+        <button class="chip-btn nav" id="qNext" type="button" title="下一题">›</button>
+      </div>
+      <span class="state">
+        <span class="dot" id="statusDot"></span>
+        <span class="state-text" id="statusText">待机</span>
+      </span>
+      <button class="chip-btn page hidden" id="btnPageUp" type="button" title="向上翻看前面的回答">▲</button>
+      <button class="chip-btn page hidden" id="btnPageDown" type="button" title="向下翻看后面的回答">▼</button>
+      <span class="chip" id="balanceChip" title="连接状态">
+        <span class="led" id="balanceLed"></span>
+      </span>
+      <button class="chip-btn" id="btnAuto" type="button" title="自动回答">
+        <span class="led" id="autoLed"></span><span class="label">自动</span>
+      </button>
+      <button class="chip-btn" id="btnProtect" type="button" title="防录屏隐身">
+        <span class="label">隐身</span>
+      </button>
+      <button class="chip-btn" id="btnLock" type="button" title="锁定位置与尺寸，避免误拖">
+        <span class="label">锁定</span>
+      </button>
+      <span class="grow"></span>
+      <button class="chip-btn" id="btnPanel" type="button" title="切换到控制面板">
+        <span class="label">面板</span>
+      </button>
+      <button class="chip-btn" id="btnMain" type="button" title="回到主窗">
+        <span class="label">主窗</span>
+      </button>
+    </header>
+
+    <main class="lyrics-text" id="text">
+      <div class="lyrics-question empty" id="question"></div>
+      <div class="lyrics-answer" id="answer">
+        <div class="answer-body" id="answerBody"><span class="placeholder">待机</span></div>
+      </div>
+    </main>
+
+    <div class="qlist hidden" id="qList"></div>
+
+    <footer class="control bottom" id="bottomBar">
+      <button class="chip-btn strong" id="btnListen" type="button">开始</button>
+      <button class="chip-btn danger hidden" id="btnStop" type="button">停止生成</button>
+      <button class="chip-btn" id="btnCopy" type="button">复制</button>
+      <span class="grow"></span>
+      <button class="chip-btn font" id="btnFontDown" type="button" title="减小字号">A−</button>
+      <button class="chip-btn font" id="btnFontUp" type="button" title="增大字号">A+</button>
+    </footer>
+
+    <div class="resize-edge" id="resizeEdge" title="拖动调整宽度"></div>
+  </div>
+
+  <script src="lyrics.js"></script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://job.echoq.cn/sitemap.xml
+Sitemap: https://echoq.cn/sitemap-echoq.xml

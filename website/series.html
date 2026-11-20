@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EchoQ · 两个桌面工具</title>
+  <meta name="description" content="EchoQ 旗下两个 Windows 桌面工具：应声面试负责面试和笔试，应声运营负责小红书内容运营。" />
+  <link rel="canonical" href="https://echoq.cn/" />
+  <meta name="robots" content="index,follow,max-image-preview:large" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="EchoQ" />
+  <meta property="og:title" content="EchoQ · 应声面试与应声运营" />
+  <meta property="og:description" content="两个 Windows 桌面工具：应声面试负责面试和笔试，应声运营负责小红书内容运营。" />
+  <meta property="og:url" content="https://echoq.cn/" />
+  <meta property="og:image" content="https://echoq.cn/assets/og-echoq.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="theme-color" content="#132019" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <link rel="icon" href="/assets/echoq.svg?v=20261120k" type="image/svg+xml" />
+  <style>
+    :root {
+      --ink: #132019;
+      --paper: #f7f5ef;
+      --green: #22c993;
+      --green-2: #5ee0aa;
+      --pink: #ff2442;
+      --pink-2: #ff8fa1;
+      --serif: "Songti SC", "Noto Serif SC", "STSong", serif;
+      --mono: "JetBrains Mono", Consolas, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+    body {
+      background: var(--ink);
+      color: #f4f1e7;
+      font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    a { color: inherit; text-decoration: none; }
+
+    .screen {
+      position: relative;
+      min-height: 100vh;
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    /* ---------- 第一屏：两个产品 ---------- */
+    .brand {
+      position: absolute;
+      top: 30px;
+      left: 32px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 12px;
+      letter-spacing: .16em;
+      font-family: var(--mono);
+      color: rgba(244, 241, 231, .52);
+    }
+    .brand img { width: 24px; height: 24px; border-radius: 6px; display: block; }
+    .brand span { font-size: 13px; }
+
+    .split {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      position: relative;
+    }
+    .split::before {
+      content: "";
+      position: absolute;
+      top: 10vh;
+      bottom: 10vh;
+      left: 50%;
+      width: 1px;
+      background: rgba(244, 241, 231, .14);
+    }
+
+    .half {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 76px 4vw 62px;
+      text-align: center;
+      transition: background .3s ease;
+    }
+    .half::before {
+      content: "";
+      position: absolute;
+      width: 420px;
+      height: 320px;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: .18;
+      pointer-events: none;
+    }
+    .half.left::before { background: #22c993; }
+    .half.right::before { background: #ff2442; }
+    .half:hover { background: rgba(255, 255, 255, .02); }
+
+    .mock-wrap {
+      position: relative;
+      z-index: 1;
+      width: min(440px, 100%);
+      animation: drift 7s ease-in-out infinite;
+    }
+    .half.right .mock-wrap { animation-delay: -3.5s; }
+    @keyframes drift {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-9px); }
+    }
+
+    .mock {
+      border-radius: 12px;
+      overflow: hidden;
+      background: #f4f7f9;
+      color: #17222c;
+      text-align: left;
+      box-shadow:
+        0 44px 80px -36px rgba(0, 0, 0, .8),
+        0 0 0 1px rgba(255, 255, 255, .07);
+      transform: rotate(-1.8deg);
+      transition: transform .35s ease, box-shadow .35s ease;
+    }
+    .half.right .mock { transform: rotate(1.8deg); }
+    .half:hover .mock {
+      transform: rotate(0) translateY(-5px);
+      box-shadow:
+        0 60px 100px -40px rgba(0, 0, 0, .85),
+        0 0 0 1px rgba(255, 255, 255, .1);
+    }
+
+    /* 应声面试原型 */
+    .mi-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      height: 30px;
+      padding: 0 10px;
+      background: #eef2f5;
+      border-bottom: 1px solid #e0e7ee;
+      font-size: 9px;
+      color: #64748b;
+    }
+    .mi-logo { width: 11px; height: 11px; border-radius: 3px; display: block; }
+    .mi-title b { font-size: 9px; font-weight: 600; color: #334155; }
+    .mi-tabs {
+      margin: 0 auto;
+      display: flex;
+      gap: 2px;
+      padding: 2px;
+      border-radius: 5px;
+      background: #e2e8ef;
+    }
+    .mi-tabs i { font-style: normal; font-size: 8px; padding: 2px 7px; border-radius: 3px; color: #64748b; }
+    .mi-tabs i.on { background: #fff; color: #17222c; font-weight: 600; }
+    .mi-win { display: flex; gap: 6px; color: #94a3b8; font-size: 9px; }
+
+    .mi-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 9px;
+      background: #f7f9fb;
+      border-bottom: 1px solid #e8edf2;
+    }
+    .mi-start {
+      font-size: 8px;
+      font-weight: 600;
+      color: #04301f;
+      background: var(--green);
+      border-radius: 5px;
+      padding: 5px 9px;
+    }
+    .mi-meter { flex: 1; display: flex; align-items: center; gap: 5px; }
+    .mi-meter i { flex: 1; height: 3px; border-radius: 2px; background: #e4eaf0; position: relative; }
+    .mi-meter i::after { content: ""; position: absolute; inset: 0 18% 0 0; border-radius: 2px; background: var(--green); }
+    .mi-meter em { font-style: normal; font-size: 7px; color: #94a3b8; }
+    .mi-mic {
+      font-size: 7.5px;
+      color: #b45f18;
+      border: 1px solid #f0b37e;
+      border-radius: 999px;
+      padding: 3px 7px;
+      background: #fff;
+    }
+    .mi-auto {
+      font-size: 7.5px;
+      color: #0a8f63;
+      background: #e6f9f0;
+      border-radius: 999px;
+      padding: 3px 7px;
+      font-weight: 600;
+    }
+
+    .mi-main { display: grid; grid-template-columns: 1fr 44px; height: 198px; }
+    .mi-left { display: flex; flex-direction: column; min-width: 0; }
+    .mi-panel { padding: 7px 9px; border-bottom: 1px solid #e8edf2; }
+    .mi-panel:first-child { flex: 0 0 68px; background: #fbfcfd; }
+    .mi-panel.answer { flex: 1; background: #fff; }
+    .mi-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+    .mi-head b { font-size: 8px; font-weight: 600; color: #334155; }
+    .mi-head b.blue { color: #1d4ed8; }
+    .mi-head span { font-size: 7px; color: #94a3b8; }
+    .mi-head .tools { font-size: 6.5px; letter-spacing: .02em; }
+    .mi-bubble {
+      font-size: 8px;
+      line-height: 1.55;
+      color: #475569;
+      background: #fff;
+      border: 1px solid #e8edf2;
+      border-radius: 5px;
+      padding: 4px 6px;
+      margin-bottom: 4px;
+    }
+    .mi-q {
+      display: inline-block;
+      font-size: 6.5px;
+      color: #0a8f63;
+      background: #e6f9f0;
+      border-radius: 3px;
+      padding: 1px 5px;
+      margin-bottom: 4px;
+    }
+    .mi-text { font-size: 8px; line-height: 1.6; color: #334155; }
+    .mi-text b { display: block; color: #1d4ed8; font-size: 8px; margin-bottom: 2px; }
+    .mi-line { height: 4px; border-radius: 2px; background: #eef2f6; margin-top: 5px; }
+    .mi-line.short { width: 64%; }
+
+    .mi-rail {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      padding: 7px 4px;
+      background: #fbfcfd;
+      border-left: 1px solid #e8edf2;
+    }
+    .rail-title { font-size: 7px; color: #64748b; }
+    .rail-search {
+      width: 24px; height: 16px;
+      display: grid; place-items: center;
+      border: 1px solid #e2e8ef; border-radius: 3px;
+      color: #94a3b8; font-size: 8px;
+    }
+    .q {
+      width: 26px; height: 20px;
+      display: grid; place-items: center;
+      border-radius: 4px;
+      font-size: 7px;
+      color: #64748b;
+      background: #f1f5f9;
+    }
+    .q.on { background: #e6f9f0; color: #0a8f63; font-weight: 600; }
+    .rail-me {
+      margin-top: auto;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      display: grid; place-items: center;
+      font-size: 6.5px;
+      color: #fff;
+      background: #94a3b8;
+    }
+
+    /* EchoQ Ops 原型 */
+    .mock-ops { background: #fff8f9; color: #221014; }
+    .mo-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      height: 28px;
+      padding: 0 10px;
+      background: #f6e9ec;
+      border-bottom: 1px solid rgba(64, 18, 32, .1);
+      font-size: 8px;
+      color: #7d5c66;
+    }
+    .mo-title i { width: 6px; height: 6px; border-radius: 50%; background: rgba(64, 18, 32, .18); }
+    .mo-title b { margin-left: 4px; font-family: var(--mono); font-size: 8px; letter-spacing: .04em; color: #221014; }
+    .mo-title em {
+      margin-left: auto;
+      font-style: normal;
+      font-size: 7px;
+      color: #ff2442;
+      background: #ffe9ee;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+
+    .mo-body { display: grid; grid-template-columns: 88px 1fr; height: 228px; }
+    .mo-rail { padding: 10px 8px; background: #221014; color: rgba(255, 255, 255, .55); }
+    .mo-logo { font-family: var(--mono); font-size: 8px; color: #ff8fa1; margin-bottom: 13px; letter-spacing: .08em; }
+    .mo-rail .lab { display: block; font-size: 6px; color: rgba(255, 255, 255, .3); margin: 8px 0 5px; letter-spacing: .1em; }
+    .mo-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 7px;
+      padding: 4px 5px;
+      border-radius: 3px;
+      margin-bottom: 2px;
+    }
+    .mo-nav.on { background: rgba(255, 36, 66, .16); color: #ffb3c7; }
+    .mo-nav em { font-style: normal; font-size: 6px; color: rgba(255, 255, 255, .38); }
+
+    .mo-main { padding: 10px 11px; overflow: hidden; }
+    .mo-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; }
+    .mo-head b { display: block; font-size: 9px; font-weight: 600; }
+    .mo-head small { font-size: 6.5px; color: #a98590; }
+    .mo-avatar {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      display: grid; place-items: center;
+      font-size: 6.5px;
+      color: #fff;
+      background: #ff2442;
+    }
+    .mo-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 8px; }
+    .mo-stats div {
+      padding: 5px 6px;
+      border: 1px solid rgba(64, 18, 32, .09);
+      border-radius: 4px;
+      background: #fff;
+    }
+    .mo-stats small { display: block; font-size: 5.5px; color: #a98590; }
+    .mo-stats b { font-size: 10px; }
+    .mo-stats b span { font-size: 6px; font-weight: 400; color: #a98590; margin-left: 1px; }
+
+    .mo-board { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .mo-col h5 {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 6.5px;
+      font-weight: 600;
+      color: #7d5c66;
+      margin-bottom: 4px;
+    }
+    .mo-col h5 em { font-style: normal; color: #a98590; font-weight: 400; }
+    .mo-card {
+      padding: 5px 6px;
+      border: 1px solid rgba(64, 18, 32, .09);
+      border-radius: 4px;
+      background: #fff;
+      margin-bottom: 4px;
+    }
+    .mo-card strong { display: block; font-size: 6.5px; line-height: 1.5; font-weight: 600; margin-bottom: 3px; }
+    .mo-card span {
+      display: inline-block;
+      font-size: 5.5px;
+      padding: 1px 4px;
+      border-radius: 2px;
+      color: #d81e3f;
+      background: #ffe9ee;
+    }
+
+    .half .en {
+      position: relative;
+      z-index: 1;
+      margin-top: 30px;
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: .18em;
+      color: rgba(244, 241, 231, .38);
+    }
+    .half h1 {
+      position: relative;
+      z-index: 1;
+      margin-top: 7px;
+      font-family: var(--serif);
+      font-size: clamp(25px, 2.8vw, 34px);
+      font-weight: 600;
+      letter-spacing: -.5px;
+      color: #fbf8ef;
+    }
+    .half h1 em { font-style: normal; color: var(--green-2); }
+    .half.right h1 em { color: var(--pink-2); }
+    .half p {
+      position: relative;
+      z-index: 1;
+      margin-top: 9px;
+      max-width: 330px;
+      font-size: 13px;
+      line-height: 1.8;
+      color: rgba(244, 241, 231, .56);
+    }
+
+    .scroll-hint {
+      position: absolute;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: .12em;
+      color: rgba(244, 241, 231, .34);
+    }
+    .scroll-hint span { animation: nudge 2s ease-in-out infinite; }
+    @keyframes nudge { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
+
+    /* ---------- 第二屏：关于我们 ---------- */
+    .about {
+      background: var(--paper);
+      color: var(--ink);
+      align-items: center;
+      text-align: center;
+      padding: 80px 24px;
+    }
+    .about .eyebrow {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .2em;
+      color: #0a6b48;
+      margin-bottom: 22px;
+    }
+    .about h2 {
+      font-family: var(--serif);
+      font-size: clamp(34px, 5vw, 58px);
+      font-weight: 600;
+      line-height: 1.16;
+      letter-spacing: -1px;
+      max-width: 760px;
+    }
+    .about h2 em { font-style: normal; color: #0f9d68; }
+    .about p {
+      max-width: 520px;
+      margin-top: 20px;
+      font-size: 14px;
+      line-height: 1.9;
+      color: #5b6a61;
+    }
+    .about-links {
+      display: flex;
+      gap: 26px;
+      margin-top: 34px;
+      font-size: 13px;
+    }
+    .about-links a { border-bottom: 1px solid rgba(19, 32, 25, .28); padding-bottom: 2px; }
+    .about-links a:hover { border-color: #0f9d68; color: #0a6b48; }
+    .about .copyright {
+      position: absolute;
+      bottom: 24px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 11px;
+      color: #8a958d;
+    }
+    .about .back {
+      position: absolute;
+      top: 28px;
+      left: 32px;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .12em;
+      color: #8a958d;
+    }
+    /* ---------- 移动端 ---------- */
+    @media (max-width: 820px) {
+      html { scroll-snap-type: none; }
+      .screen { min-height: auto; }
+      .split { grid-template-columns: 1fr; }
+      .split::before { display: none; }
+      .half { padding: 56px 22px 52px; }
+      .half + .half { border-top: 1px solid rgba(244, 241, 231, .12); }
+      .half::before { width: 260px; height: 220px; filter: blur(60px); }
+      .mock-wrap { width: min(340px, 100%); }
+      .half .en { margin-top: 24px; }
+      .half h1 { margin-top: 6px; font-size: 26px; }
+      .half p { font-size: 12.5px; }
+      .mi-main { height: 178px; }
+      .mo-body { height: 206px; grid-template-columns: 78px 1fr; }
+      .brand { top: 20px; left: 20px; }
+      .scroll-hint { display: none; }
+      .about { padding: 90px 24px; min-height: 82vh; }
+      .about p { font-size: 13.5px; }
+    }
+  </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "EchoQ",
+    "url": "https://echoq.cn/",
+    "logo": "https://echoq.cn/assets/echoq.svg",
+    "description": "EchoQ 做 Windows 桌面工具：应声面试负责面试和笔试，应声运营负责小红书内容运营。",
+    "sameAs": [
+      "https://job.echoq.cn/",
+      "https://ops.echoq.cn/"
+    ]
+  }
+  </script>
+</head>
+<body>
+
+<main>
+  <section class="screen" id="products">
+    <a class="brand" href="/"><img src="/assets/echoq.svg?v=20261120k" alt="EchoQ" /><span>ECHOQ</span></a>
+
+    <div class="split">
+      <a class="half left" href="https://job.echoq.cn/" aria-label="进入应声面试官网">
+        <div class="mock-wrap">
+          <div class="mock mock-interview">
+            <div class="mi-title">
+              <img class="mi-logo" src="/assets/interview.svg?v=20261120o" alt="" /><b>应声面试</b>
+              <span class="mi-tabs"><i class="on">面试</i><i>笔试</i></span>
+              <span class="mi-win">☀ ✕</span>
+            </div>
+            <div class="mi-controls">
+              <span class="mi-start">开始听面试官</span>
+              <span class="mi-meter"><i></i><em>100%</em></span>
+              <span class="mi-mic">麦克风</span>
+              <span class="mi-auto">自动</span>
+            </div>
+            <div class="mi-main">
+              <div class="mi-left">
+                <div class="mi-panel">
+                  <div class="mi-head"><b>面试官</b><span>云端 ASR</span></div>
+                  <div class="mi-bubble">这个知识库项目，你觉得最难的地方是什么？</div>
+                  <div class="mi-bubble">准确率是怎么从 62% 提到 81% 的？</div>
+                </div>
+                <div class="mi-panel answer">
+                  <div class="mi-head"><b class="blue">建议回答</b><span class="tools">重新生成　复制　导出</span></div>
+                  <span class="mi-q">Q2 · 准确率提升</span>
+                  <div class="mi-text"><b>【结论】先解决召回，再调排序。</b>把评测集从 80 条扩到 600 条，按意图分层看 badcase。</div>
+                  <div class="mi-line"></div>
+                  <div class="mi-line short"></div>
+                </div>
+              </div>
+              <div class="mi-rail">
+                <span class="rail-title">题目</span>
+                <span class="rail-search">⌕</span>
+                <span class="q on">Q1</span>
+                <span class="q">Q2</span>
+                <span class="rail-me">我</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <span class="en">ECHOQ INTERVIEW</span>
+        <h1><em>应声面试</em></h1>
+        <p>面试和笔试的桌面助手。实时转写，自动生成能直接说出口的回答。</p>
+      </a>
+
+      <a class="half right" href="https://ops.echoq.cn/" aria-label="进入应声运营官网">
+        <div class="mock-wrap">
+          <div class="mock mock-ops">
+            <div class="mo-title">
+              <i></i><i></i><i></i>
+              <b>应声运营</b>
+              <em>内容运营</em>
+            </div>
+            <div class="mo-body">
+              <aside class="mo-rail">
+                <div class="mo-logo">EQ / OPS</div>
+                <span class="lab">内容</span>
+                <span class="mo-nav on">选题池 <em>18</em></span>
+                <span class="mo-nav">草稿箱 <em>6</em></span>
+                <span class="mo-nav">配图库</span>
+                <span class="lab">发布</span>
+                <span class="mo-nav">发布队列 <em>4</em></span>
+                <span class="mo-nav">账号矩阵</span>
+                <span class="mo-nav">数据回收</span>
+              </aside>
+              <div class="mo-main">
+                <div class="mo-head">
+                  <div><b>今日内容看板</b><small>11 月 20 日 · 周四</small></div>
+                  <span class="mo-avatar">徐</span>
+                </div>
+                <div class="mo-stats">
+                  <div><small>待发布</small><b>7<span>篇</span></b></div>
+                  <div><small>今日已发</small><b>12<span>篇</span></b></div>
+                  <div><small>累计曝光</small><b>3.8<span>万</span></b></div>
+                </div>
+                <div class="mo-board">
+                  <div class="mo-col">
+                    <h5>选题池 <em>18</em></h5>
+                    <div class="mo-card"><strong>秋冬通勤穿搭，5 套不重样</strong><span>待成稿</span></div>
+                    <div class="mo-card"><strong>租房改造：300 元搞定氛围感</strong><span>待配图</span></div>
+                  </div>
+                  <div class="mo-col">
+                    <h5>待发布 <em>7</em></h5>
+                    <div class="mo-card"><strong>小户型收纳，这 6 个位置别浪费</strong><span>09:40</span></div>
+                    <div class="mo-card"><strong>通勤包里到底装什么</strong><span>12:10</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <span class="en">ECHOQ OPS</span>
+        <h1><em>应声运营</em></h1>
+        <p>小红书内容运营工作台。选题、成稿、配图、发布，一条链路跑完。</p>
+      </a>
+    </div>
+
+    <a class="scroll-hint" href="#about"><span>↓</span>关于我们</a>
+  </section>
+
+  <section class="screen about" id="about">
+    <a class="back" href="#products">↑ 返回</a>
+    <div class="eyebrow">ABOUT</div>
+    <h2>把时间，<br /><em>留给重要的事</em>。</h2>
+    <div class="about-links">
+      <a href="https://job.echoq.cn/">应声面试</a>
+      <a href="https://ops.echoq.cn/">应声运营</a>
+    </div>
+    <div class="copyright">© 2026 EchoQ</div>
+  </section>
+</main>
+
+</body>
+</html>

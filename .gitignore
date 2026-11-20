@@ -1,0 +1,29 @@
+node_modules/
+config.json
+runtime/
+logs/
+release/
+release-build/
+release-new/
+dist/
+build/engine/
+build/.engine.zip
+*.log
+*.exe
+*.blockmap
+shot*.png
+screenshots/
+.screenshots/
+.trae-html-share-packages/
+server/data/
+# 服务端闭源，不进入公开仓库
+server/
+# 内部交接文档，含服务器与部署信息
+HANDOVER.md
+FEATURE-PLAN.md
+CHANGELOG.md
+.env
+.env.*
+!.env.example
+*.pem
+*.key

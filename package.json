@@ -1,0 +1,97 @@
+{
+  "name": "interview-copilot-pro",
+  "version": "0.3.3",
+  "private": true,
+  "description": "应声面试（EchoQ Interview）：实时听清面试官的问题，给出可以直接说出口的回答",
+  "main": "main.js",
+  "author": "EchoQ",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "check-asr": "node tools/check-asr.js",
+    "prepare-engine": "node tools/prepare-engine.js",
+    "predist": "npm run prepare-engine",
+    "prepack": "npm run prepare-engine",
+    "pack": "electron-builder --win --dir",
+    "dist": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "com.interviewcopilot.pro",
+    "productName": "应声面试",
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/onnxruntime-node/**"
+    ],
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "build/icon.png",
+      "package.json",
+      "!node_modules/onnxruntime-node/bin/napi-v6/darwin/**",
+      "!node_modules/onnxruntime-node/bin/napi-v6/linux/**",
+      "!node_modules/onnxruntime-node/bin/napi-v6/win32/arm64/**",
+      "!node_modules/onnxruntime-node/bin/napi-v6/win32/x64/DirectML.dll",
+      "!node_modules/onnxruntime-node/bin/napi-v6/win32/x64/dxcompiler.dll"
+    ],
+    "extraResources": [
+      {
+        "from": "build/engine",
+        "to": "engine",
+        "filter": [
+          "llama-server.exe",
+          "llama-server-impl.dll",
+          "llama-common.dll",
+          "llama.dll",
+          "mtmd.dll",
+          "libomp.dll",
+          "ggml.dll",
+          "ggml-base.dll",
+          "ggml-cpu-*.dll"
+        ]
+      }
+    ],
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "应声面试",
+      "artifactName": "${productName}-${version}-setup.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.${ext}"
+    }
+  },
+  "dependencies": {
+    "onnxruntime-node": "^1.31.1",
+    "ppu-indra-ocr": "^0.2.2",
+    "qrcode": "^1.5.4"
+  }
+}

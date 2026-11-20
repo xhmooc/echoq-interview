@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>账号中心 · EchoQ Interview</title>
+  <meta name="description" content="登录 EchoQ 账号，查看账号状态。" />
+  <link rel="canonical" href="https://job.echoq.cn/account.html" />
+  <meta name="robots" content="noindex,follow" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="EchoQ Interview" />
+  <meta property="og:title" content="账号中心 · EchoQ Interview" />
+  <meta property="og:description" content="登录 EchoQ 账号，查看账号状态。" />
+  <meta property="og:url" content="https://job.echoq.cn/account.html" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <link rel="icon" href="/assets/interview.svg?v=20261120p" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/assets/interview.svg?v=20261120p" />
+  <link rel="stylesheet" href="/assets/site.css?v=20261120p" />
+</head>
+<body class="has-dark-hero">
+
+<header class="nav" id="nav">
+  <div class="nav-inner">
+    <a class="brand" href="/">
+      <img class="brand-logo" src="/assets/interview.svg?v=20261120p" alt="" />
+      <span class="brand-name">EchoQ Interview</span>
+      <span class="brand-cn">应声面试</span>
+    </a>
+    <nav class="nav-links">
+      <a href="/#features">功能</a>
+      <a href="/#written">笔试</a>
+      <a href="/#download">下载</a>
+      <a href="/#faq">常见问题</a>
+    </nav>
+    <div class="nav-actions">
+      <a class="btn btn-ghost btn-sm" href="/">返回首页</a>
+      <a class="btn btn-primary btn-sm" href="/#download">下载 Windows 版</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="account-hero">
+    <div class="container account-grid">
+      <div class="account-copy">
+        <div class="eyebrow"><span class="pulse"></span>账号中心</div>
+        <h1>登录账号，<br />开始使用</h1>
+        <p>EchoQ 与客户端共用同一账号，登录后即可使用。</p>
+        <div class="account-points">
+          <div class="account-point"><span class="tick">✓</span><span><b>功能开放</b>面试、笔试和手机副屏均可使用。</span></div>
+          <div class="account-point"><span class="tick">✓</span><span><b>数据留在本机</b>简历、模型和记录保存在电脑上。</span></div>
+        </div>
+      </div>
+
+      <div class="auth-card" id="auth-card">
+        <!-- 未登录 -->
+        <div id="auth-view">
+          <div class="auth-tabs" role="tablist">
+            <button class="auth-tab active" data-mode="login" type="button">登录</button>
+            <button class="auth-tab" data-mode="register" type="button">注册</button>
+          </div>
+          <form id="auth-form" novalidate>
+            <div class="field">
+              <label for="email">邮箱</label>
+              <input id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required />
+            </div>
+            <div class="field">
+              <label for="password">密码</label>
+              <input id="password" name="password" type="password" autocomplete="current-password" placeholder="至少 6 位" minlength="6" required />
+              <div class="hint" id="password-hint" hidden>注册密码至少 6 位，最长 72 位。</div>
+            </div>
+            <button class="btn btn-primary auth-submit" id="auth-submit" type="submit">登录</button>
+            <div class="auth-error" id="auth-error"></div>
+            <p class="auth-note">登录或注册即表示同意 <a href="/terms.html" style="color:var(--mint-deep)">服务条款</a> 与 <a href="/privacy.html" style="color:var(--mint-deep)">隐私政策</a></p>
+          </form>
+        </div>
+
+        <!-- 已登录 -->
+        <div id="account-view" hidden>
+          <div class="account-balance">
+            <div class="account-email" id="account-email">—</div>
+            <div class="balance-num" id="balance-minutes">0</div>
+            <div class="balance-unit" id="balance-unit">分钟剩余</div>
+            <div class="balance-sub" id="balance-sub">按实际使用秒数扣减</div>
+          </div>
+
+          <div id="redeem-block">
+            <div class="field">
+              <label for="redeem-code">兑换时长码</label>
+              <div class="redeem-row">
+                <input id="redeem-code" type="text" placeholder="例如 ABCD-EFGH-1234" autocomplete="off" spellcheck="false" />
+                <button class="btn btn-primary" id="redeem-btn" type="button">兑换</button>
+              </div>
+              <div class="hint" id="redeem-hint">时长码不区分大小写，兑换后立即到账。</div>
+            </div>
+          </div>
+
+          <div class="account-actions">
+            <button class="btn btn-ghost" id="refresh-btn" type="button">刷新状态</button>
+            <button class="btn btn-ghost" id="logout-btn" type="button">退出登录</button>
+          </div>
+          <div class="auth-error" id="account-error"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-bottom" style="border-top:0;padding-top:0">
+      <span>© 2026 EchoQ · 应声面试</span>
+      <span><a href="/privacy.html" style="color:var(--muted-2)">隐私政策</a> · <a href="/terms.html" style="color:var(--muted-2)">服务条款</a></span>
+    </div>
+  </div>
+</footer>
+
+<div id="toast" style="position:fixed;left:50%;bottom:34px;transform:translate(-50%,20px);opacity:0;pointer-events:none;z-index:80;background:#ffffff;border:1px solid rgba(13,168,117,.35);color:#0d1526;padding:11px 18px;border-radius:10px;font-size:13px;transition:opacity .25s,transform .25s;box-shadow:0 18px 44px -20px rgba(15,23,42,.28)"></div>
+
+<script src="/assets/site.js?v=20261120p"></script>
+<script src="/assets/account.js?v=20261120q"></script>
+</body>
+</html>
