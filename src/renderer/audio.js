@@ -184,40 +184,47 @@
       stream.getVideoTracks().forEach((track) => track.stop());
 
       this.stream = stream;
-      this.ctx = new AudioContext();
-      await this.ctx.resume();
+      try {
+        this.ctx = new AudioContext();
+        await this.ctx.resume();
 
-      const rate = this.ctx.sampleRate;
-      // 约 32ms 一帧：窗口越短，开口点和静音计时越准，不会因为帧太粗而多算/少算静音。
-      const frame = Math.pow(2, Math.round(Math.log2(rate * 0.032)));
-      this.frameSamples = frame;
-      this.rate = rate;
-      this.silenceMs = silenceMs;
-      this.silenceLimit = Math.round(rate * silenceMs / 1000);
-      // 宽限只能比基础静音更长：用户把静音设到 2s 以上时，不能再被 2s 上限压回去。
-      this.graceLimit = Math.max(
-        this.silenceLimit,
-        Math.min(this.silenceLimit + Math.round(rate * GRACE_MS / 1000), Math.round(rate * 2)),
-      );
-      this.maxSamples = Math.round(rate * maxSegmentS);
-      this.sensitivity = sensitivity;
-      this.prerollLimit = Math.round(rate * PREROLL_MS / 1000);
-      this.tailSamples = Math.round(rate * TAIL_MS / 1000);
-      this.warmupSamples = Math.round(rate * 0.4);
-      this.speechWindowFrames = Math.max(20, Math.round((rate * 2.5) / frame));
+        const rate = this.ctx.sampleRate;
+        // 约 32ms 一帧：窗口越短，开口点和静音计时越准，不会因为帧太粗而多算/少算静音。
+        const frame = Math.pow(2, Math.round(Math.log2(rate * 0.032)));
+        this.frameSamples = frame;
+        this.rate = rate;
+        this.silenceMs = silenceMs;
+        this.silenceLimit = Math.round(rate * silenceMs / 1000);
+        // 宽限只能比基础静音更长：用户把静音设到 2s 以上时，不能再被 2s 上限压回去。
+        this.graceLimit = Math.max(
+          this.silenceLimit,
+          Math.min(this.silenceLimit + Math.round(rate * GRACE_MS / 1000), Math.round(rate * 2)),
+        );
+        this.maxSamples = Math.round(rate * maxSegmentS);
+        this.sensitivity = sensitivity;
+        this.prerollLimit = Math.round(rate * PREROLL_MS / 1000);
+        this.tailSamples = Math.round(rate * TAIL_MS / 1000);
+        this.warmupSamples = Math.round(rate * 0.4);
+        this.speechWindowFrames = Math.max(20, Math.round((rate * 2.5) / frame));
 
-      this.source = this.ctx.createMediaStreamSource(stream);
-      this.processor = this.ctx.createScriptProcessor(frame, 1, 1);
-      this.silent = this.ctx.createGain();
-      this.silent.gain.value = 0;
+        this.source = this.ctx.createMediaStreamSource(stream);
+        this.processor = this.ctx.createScriptProcessor(frame, 1, 1);
+        this.silent = this.ctx.createGain();
+        this.silent.gain.value = 0;
 
-      this.processor.onaudioprocess = (event) => {
-        if (!this.active) return;
-        this.handleFrame(new Float32Array(event.inputBuffer.getChannelData(0)), rate);
-      };
-      this.source.connect(this.processor);
-      this.processor.connect(this.silent);
-      this.silent.connect(this.ctx.destination);
+        this.processor.onaudioprocess = (event) => {
+          if (!this.active) return;
+          this.handleFrame(new Float32Array(event.inputBuffer.getChannelData(0)), rate);
+        };
+        this.source.connect(this.processor);
+        this.processor.connect(this.silent);
+        this.silent.connect(this.ctx.destination);
+      } catch (err) {
+        // 媒体流已拿到但音频图没建起来：必须释放轨道，否则麦克风/共享会一直被占用
+        stream.getTracks().forEach((track) => track.stop());
+        this.reset();
+        throw err;
+      }
 
       this.active = true;
       audioTracks[0].onended = () => {

@@ -12,6 +12,8 @@
   let activeQid = null;
   let queueCount = 0;
   let queue = Promise.resolve();
+  /* 清屏世代号：清屏时 +1，清屏前入队的识别结果回来时对不上就丢弃，避免旧内容回填。 */
+  let transcriptGen = 0;
   let seq = 0;
   let currentAnswer = '';
   let currentQuestion = '';
@@ -460,6 +462,7 @@
     queueCount += 1;
     updateAsrMeta();
     const enqueuedAt = Date.now();
+    const gen = transcriptGen;
 
     const line = document.createElement('div');
     line.className = 'line pending';
@@ -489,6 +492,7 @@
         const text = await api.transcribe(payload);
         asrDone = Date.now();
         line.remove();
+        if (gen !== transcriptGen) return;
         if (text && text.trim()) {
           const clean = text.trim();
           const pieces = splitSentences(clean);
@@ -509,6 +513,7 @@
         }
       } catch (err) {
         line.remove();
+        if (gen !== transcriptGen) return;
         const msg = err.message || '识别失败';
         logDiag('ASR', { ...base(), error: msg });
         if (/登录已失效|时长不足/.test(msg)) openAuthGate();
@@ -1196,6 +1201,7 @@
       if (pendingTail.timer) clearTimeout(pendingTail.timer);
       pendingTail = null;
     }
+    transcriptGen += 1;
     entries = [];
     sessionLog = [];
     questions = [];
@@ -1239,10 +1245,26 @@
   /* 切换收听来源：正在收音时自动重启，免去「停止再开始」。 */
   async function toggleSource() {
     if (!cfg) return;
-    const next = cfg.audio.source === 'mic' ? 'system' : 'mic';
+    const prev = cfg.audio.source;
+    const next = prev === 'mic' ? 'system' : 'mic';
     const wasListening = Boolean(audio && audio.listening);
     if (wasListening) audio.stop();
-    cfg = await api.saveConfig({ audio: { source: next } });
+    try {
+      cfg = await api.saveConfig({ audio: { source: next } });
+    } catch (err) {
+      // 配置没写进去：把收音恢复到原来的来源，避免界面显示「正在听」但实际没录
+      if (wasListening) {
+        try {
+          await audio.start(prev, cfg.audio);
+          setListeningUi(true);
+        } catch (retryErr) {
+          setListeningUi(false);
+          await endUsage(true);
+        }
+      }
+      toast(`切换音源失败：${(err && err.message) || '配置保存失败'}`, true);
+      return;
+    }
     renderSourceBtn();
     const voice = next === 'mic' ? '麦克风（现场面试）' : '电脑声音（面试官）';
     if (wasListening) {
@@ -1504,11 +1526,11 @@
   function applyAudioState(state) {
     if (state === 'ended') {
       setListeningUi(false);
-      endUsage(true).then(() => renderAuth());
+      endUsage(true).then(() => renderAuth()).catch(() => {});
       toast('音频源已断开（共享停止或设备拔出）', true);
     } else if (state === 'stopped') {
       setListeningUi(false);
-      endUsage(true);
+      endUsage(true).catch(() => {});
     }
   }
 
@@ -1680,20 +1702,25 @@
       selectedTier = fallback.id;
     }
 
-    const html = items.map((item) => {
-      const parts = [TIER_LABEL[item.id] || item.id];
+    // 用 DOM 构造 option，档位 id 不拼进 innerHTML（数据不可信时的纵深防御）
+    const options = items.map((item) => {
+      const parts = [TIER_LABEL[item.id] || String(item.id)];
       if (item.total) parts.push(`约 ${formatBytes(item.total)}`);
       if (item.recommended) parts.push('本机推荐');
       if (item.active) parts.push('使用中');
       else if (item.ready) parts.push('已下载');
       else parts.push('未下载');
-      return `<option value="${item.id}">${parts.join(' · ')}</option>`;
-    }).join('');
+      const option = document.createElement('option');
+      option.value = item.id;
+      option.textContent = parts.join(' · ');
+      return option;
+    });
 
     for (const id of ['modelTier', 'obModelTier']) {
       const el = $(id);
       if (!el) continue;
-      el.innerHTML = html;
+      el.innerHTML = '';
+      options.forEach((option) => el.appendChild(option.cloneNode(true)));
       el.value = selectedTier;
     }
   }
@@ -2559,7 +2586,15 @@
     }
     const btn = $(buttonId);
     btn.disabled = true;
-    const result = await api.smsSend(phone);
+    let result;
+    try {
+      result = await api.smsSend(phone);
+    } catch (err) {
+      // IPC 层异常也要把按钮放出来，否则验证码按钮会一直禁用
+      btn.disabled = false;
+      setAuthError(errorId, (err && err.message) || '验证码发送失败');
+      return;
+    }
     if (!result || !result.ok) {
       btn.disabled = false;
       setAuthError(errorId, (result && result.error) || '验证码发送失败');
@@ -2637,10 +2672,20 @@
 
   async function loadInvite() {
     if (!authState || !authState.logged_in) return;
-    if (inviteLoadedFor === authState.email) return;
-    inviteLoadedFor = authState.email;
-    const result = await api.inviteInfo();
-    if (!result || !result.ok) return;
+    const email = authState.email;
+    if (inviteLoadedFor === email) return;
+    inviteLoadedFor = email;
+    let result;
+    try {
+      result = await api.inviteInfo();
+    } catch (err) {
+      result = null;
+    }
+    if (!result || !result.ok) {
+      // 这次没取到就撤销标记，下次进入账号页还能重试
+      if (inviteLoadedFor === email) inviteLoadedFor = '';
+      return;
+    }
     const invite = result.invite || {};
     const code = invite.code || '-';
     if ($('accountInvite')) $('accountInvite').textContent = code;
@@ -2949,7 +2994,13 @@
   /* silent=true 用于轮询；手动点击「我已支付」时显示错误。 */
   async function checkOrder(orderNo, silent) {
     payPollAttempts += 1;
-    const result = await api.orderGet(orderNo);
+    let result;
+    try {
+      result = await api.orderGet(orderNo);
+    } catch (err) {
+      // 轮询在 setInterval 里跑，必须自己接住异常，否则每次失败都是 unhandled rejection
+      result = { ok: false, error: (err && err.message) || '查询订单失败' };
+    }
     if (!result || !result.ok) {
       payPollFailures += 1;
       if (!silent) setAuthError('purchaseError', (result && result.error) || '查询订单失败');
@@ -3043,15 +3094,21 @@
 
   async function authLogout() {
     const official = Boolean(cfg && cfg.llm && cfg.llm.mode === 'official');
-    await endUsage(true);
+    // 结算失败也要继续退出，不能把用户卡在登录态
+    await endUsage(true).catch(() => {});
     if (official && audio && audio.listening) {
       audio.stop();
       setListeningUi(false);
     } else if (official) {
       setListeningUi(false);
     }
-    await api.authLogout();
-    authState = await api.authStatus();
+    try {
+      await api.authLogout();
+      authState = await api.authStatus();
+    } catch (err) {
+      toast('退出登录失败，请重试', true);
+      return;
+    }
     inviteLoadedFor = '';
     renderAuth();
     renderUserCard();
@@ -3149,9 +3206,14 @@
   async function usageBeat() {
     if (!usageSession) return;
     const id = usageSession.id;
-    const result = await api.usageHeartbeat(id);
+    let result;
+    try {
+      result = await api.usageHeartbeat(id);
+    } catch (err) {
+      result = { ok: false, error: (err && err.message) || '计费连接中断' };
+    }
     if (!usageSession || usageSession.id !== id) return;
-    if (!result || !result.ok) {
+    if (!result || !result.ok || !result.wallet) {
       if (result && result.unauthorized) {
         authState = await api.authStatus();
         renderAuth();

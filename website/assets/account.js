@@ -121,11 +121,12 @@
   async function loadMe(silent) {
     if (!getToken()) {
       showAuth();
-      return;
+      return false;
     }
     try {
       const data = await api('/me');
       renderAccount(data);
+      return true;
     } catch (err) {
       if (err.status === 401) {
         clearToken();
@@ -133,6 +134,7 @@
       } else if (!silent) {
         showAuth(err.message);
       }
+      return false;
     }
   }
 
@@ -200,8 +202,8 @@
   });
 
   document.getElementById('refresh-btn').addEventListener('click', async function () {
-    await loadMe();
-    showToast('状态已刷新');
+    const ok = await loadMe();
+    showToast(ok ? '状态已刷新' : '刷新失败，请稍后重试');
   });
 
   document.getElementById('logout-btn').addEventListener('click', function () {
