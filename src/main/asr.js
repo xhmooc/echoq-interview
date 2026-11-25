@@ -27,6 +27,9 @@ let ready = false;
 let localFailures = 0;
 let cloudUntil = 0;
 let cloudUnsupportedUntil = 0;
+/* 启动代数：shutdown/killSync 时递增，用来取消还没执行到 spawn 的启动流程，
+ * 否则预热中退出或切换模型时，旧启动会稍后把引擎进程拉起来变成孤儿。 */
+let startEpoch = 0;
 /* 服务端明确表示不接受 Ogg/Opus 后，本次运行就不再尝试，省掉每段一次多余请求。 */
 let opusRejected = false;
 
@@ -109,6 +112,8 @@ function ensureServer() {
   const p = resolvePaths();
   const base = `http://127.0.0.1:${p.port}`;
   lastError = '';
+  const epoch = ++startEpoch;
+  const cancelled = () => epoch !== startEpoch;
 
   starting = (async () => {
     if (await healthy(base)) {
@@ -119,6 +124,10 @@ function ensureServer() {
       throw new Error(
         '本地 ASR 文件不完整：请在设置里检查 llama-server.exe / 模型 / mmproj 三个路径，或改成云端模式。'
       );
+    }
+    /* 等健康检查的间隙可能已经 shutdown / 换模型，这时不能再拉起新进程。 */
+    if (cancelled()) {
+      throw new Error('本地 ASR 已被停止（识别设置已更改），请重新点击「开始听面试官」');
     }
     // 线程数按实测取 4，不用更激进的 6：
     // 测试机 i5-10500（6 物理核/12 线程），Qwen3-ASR 0.6B Q8，同一段中文音频各跑 5 次取中位数。
@@ -145,6 +154,13 @@ function ensureServer() {
       cwd: path.dirname(p.binary),
     });
     server = child;
+
+    /* spawn 前后被 shutdown/换模型打断：立刻杀掉刚拉起的进程，避免孤儿引擎占住端口。 */
+    if (cancelled()) {
+      server = null;
+      try { child.kill(); } catch (err) { /* 进程可能还没起完 */ }
+      throw new Error('本地 ASR 已被停止（识别设置已更改），请重新点击「开始听面试官」');
+    }
 
     if (child.stderr) {
       child.stderr.on('data', (chunk) => {
@@ -177,13 +193,13 @@ function ensureServer() {
 
     const deadline = Date.now() + 180000;
     while (Date.now() < deadline) {
+      if (cancelled() || server !== child) {
+        throw new Error('本地 ASR 已被停止（识别设置已更改），请重新点击「开始听面试官」');
+      }
       if (await healthy(base)) {
         ready = true;
         log('本地 ASR 就绪');
         return base;
-      }
-      if (server !== child) {
-        throw new Error('本地 ASR 已被停止（识别设置已更改），请重新点击「开始听面试官」');
       }
       // 本地健康检查很轻，250ms 轮询一次，模型一加载完就能立刻进入就绪。
       await new Promise((r) => setTimeout(r, 250));
@@ -500,6 +516,8 @@ function prewarm() {
 /* 切换识别方式 / 覆盖引擎文件前先停掉旧进程：等它真的退出再返回，
  * 否则新引擎可能撞上还没释放的端口，两个进程互相抢同一份模型。 */
 function shutdown() {
+  /* 让还在启动流程里的 ensureServer 感知取消，不再把引擎进程拉起来。 */
+  startEpoch += 1;
   const child = server;
   const pending = starting;
   server = null;
@@ -528,6 +546,7 @@ function shutdown() {
 
 /* 主进程异常退出时的同步兜底：只杀自己记录的 PID，不按进程名扫。 */
 function killSync() {
+  startEpoch += 1;
   const pid = server && server.pid;
   server = null;
   ready = false;

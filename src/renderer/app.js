@@ -213,13 +213,25 @@
    * 后半段还没到的半句先挂住，等下一段的开头接上，绝不当成独立题先作答。 */
   let pendingTail = null;
 
+  /* 尾部连接词：命中说明话没说完，等下一段开头接上再判题。
+   * 长句放宽到单字连接词；短残句只认多字连接词，
+   * 避免「好的」「是的」这类完整短应答被误挂起、并进下一题。 */
+  const TAIL_CONNECTORS = /(因为|所以|但是|然后|就是|那个|如果|虽然|而且|不过|接着|另外|至于|还是|或者|以及|的|和|与|跟|把|被|在|是|对|给|但|而|于|就|还|更|并)$/;
+  const TAIL_CONNECTOR_WORDS = /(因为|所以|但是|然后|就是|那个|如果|虽然|而且|不过|接着|另外|至于|还是|或者|以及)$/;
+
   function isUnfinishedTail(text, meta) {
     const core = String(text || '').replace(/\s/g, '');
-    if (core.length < 8) return false;
+    if (core.length < 2) return false;
     if (/[。！？!?；;]$/.test(core)) return false;
+    if (core.length < 8) {
+      // 短残句：只有以连接词收尾（然后/所以/那个…）才挂起等下一段；
+      // max 切出的短残句带逗号也挂起，等下一个 max 窗口接上。
+      return Boolean(TAIL_CONNECTOR_WORDS.test(core)
+        || (meta && meta.trigger === 'max' && /[，,、：:]$/.test(core)));
+    }
     if (/[，,、：:]$/.test(core)) return true;
     if (meta && meta.trigger === 'max') return true;
-    return /(的|和|与|跟|把|被|在|是|对|给|但|而|于|就|还|更|并|因为|所以|如果|就是|还是|或者|以及|然后|而且)$/.test(core);
+    return TAIL_CONNECTORS.test(core);
   }
 
   function submitHeld(text) {
@@ -242,7 +254,9 @@
   function holdSentence(text, ttlMs) {
     flushPendingTail();
     const view = renderTranscriptLine(text);
-    const ttl = Math.max(10000, Number(ttlMs) || 0);
+    // 静音切出的半句最多等 3.2 秒：下一段迟迟不来就按独立句子补判，不能让回答多等 10 秒。
+    // max 切分的半句传入了完整 max 窗口，覆盖连续说话时下一段的到来时间。
+    const ttl = Math.max(3200, Number(ttlMs) || 0);
     const held = { text, at: Date.now(), ttl, line: view.line, entry: view.entry, timer: null };
     // 一直等不到后半段（沉默、停播）就按独立句子补判，不能把这段文本吞掉
     held.timer = setTimeout(() => {
@@ -267,6 +281,8 @@
         // 接上：合并成一句再判题，半句不会单独成题
         const idx = entries.indexOf(held.entry);
         if (idx >= 0) entries.splice(idx, 1);
+        const logIdx = sessionLog.indexOf(held.entry);
+        if (logIdx >= 0) sessionLog.splice(logIdx, 1);
         if (held.line && held.line.parentNode) held.line.remove();
         sentences[0] = `${held.text}${sentences[0]}`;
       } else {
@@ -2572,6 +2588,9 @@
     const enabled = Boolean(cloud && cloud.config && cloud.config.features && cloud.config.features.sms);
     const tab = $('btnAuthTabPhone');
     if (tab) tab.classList.toggle('hidden', !enabled);
+    /* 找回密码同样走短信验证码：短信未配置时不展示入口，避免死按钮。 */
+    const forgot = $('btnForgotPassword');
+    if (forgot) forgot.classList.toggle('hidden', !enabled);
     const phonePane = $('authPhonePane');
     if (!enabled && phonePane && !phonePane.classList.contains('hidden')) {
       switchAuthTab('email');

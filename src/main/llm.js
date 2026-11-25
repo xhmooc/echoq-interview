@@ -269,19 +269,29 @@ async function streamAnswer(question, opts = {}) {
         if (!line.startsWith('data:')) continue;
         const data = line.slice(5).trim();
         if (data === '[DONE]') continue;
+        let json = null;
         try {
-          const json = JSON.parse(data);
-          const delta = json.choices?.[0]?.delta?.content;
-          if (delta) {
-            if (!gotFirst) {
-              gotFirst = true;
-              clearTimeout(firstTokenTimer);
-            }
-            full += delta;
-            onDelta(delta);
-          }
+          json = JSON.parse(data);
         } catch (err) {
           // 半截 JSON 忽略即可，下一帧会补上
+        }
+        if (!json) continue;
+        /* 服务端在流中断 / 超时 / 上游报错时会推 error 帧（带 truncated 标记）。
+         * 这时这次回答是不完整的，必须判失败让用户重试，不能把半截内容当完成。 */
+        if (json.error) {
+          const streamErr = new Error(String(json.error.message || '回答流中断，内容不完整，请重新生成'));
+          streamErr.truncated = Boolean(json.error.truncated);
+          streamErr.code = String(json.error.type || 'upstream_error');
+          throw streamErr;
+        }
+        const delta = json.choices?.[0]?.delta?.content;
+        if (delta) {
+          if (!gotFirst) {
+            gotFirst = true;
+            clearTimeout(firstTokenTimer);
+          }
+          full += delta;
+          onDelta(delta);
         }
       }
     }

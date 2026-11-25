@@ -1,6 +1,6 @@
 {
   "name": "interview-copilot-pro",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "private": true,
   "description": "应声面试（EchoQ Interview）：实时听清面试官的问题，给出可以直接说出口的回答",
   "main": "main.js",
