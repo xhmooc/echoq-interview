@@ -26,6 +26,7 @@ server/
 HANDOVER.md
 FEATURE-PLAN.md
 CHANGELOG.md
+RELEASE-PLAN.md
 .env
 .env.*
 !.env.example
