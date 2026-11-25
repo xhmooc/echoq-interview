@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>应声面试 · 界面原型</title>
+<!--
+  应声面试（EchoQ Interview）界面原型 · 竖向窄条版
+  - 单文件，双击浏览器直接打开，无任何真实接入，数据全是模拟动画
+  - 窗口形态对齐真实软件默认尺寸 460×660（竖向窄条悬浮窗）
+  - 默认浅色主题（与真实软件一致），右上角可切深色
+  - 可交互：开始/停止收音、模拟转写与流式回答、面试/笔试切换、笔试截题演示
+-->
+<style>
+  /* ============ 主题变量：默认浅色（对齐真实软件），body.dark 切深色 ============ */
+  :root {
+    --app-bg: #ffffff;
+    --titlebar-bg: #f7f9fc;
+    --line: #e8ecf2;
+    --line-strong: rgba(15, 23, 42, 0.18);
+    --text: #1f2937;
+    --muted: #64748b;
+    --muted-2: #94a3b8;
+    --chip-bg: #f6f8fb;
+    --chip-line: #e2e8f0;
+    --panel-soft: #f8fafc;
+    --switch-bg: #eef2f7;
+    --switch-active-bg: #ffffff;
+    --switch-active-color: #0f766e;
+    --card-bg: #ffffff;
+    --green: #34d399;
+    --green-deep: #10b981;
+    --green-soft: #6ee7b7;
+    --green-ink: #05281b;
+    --teal: #0f766e;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --code-bg: #0f172a;
+    --desk-bg-1: #e9edf4;
+    --desk-bg-2: #d7dfeb;
+    --card-shadow: 0 6px 18px rgba(15, 23, 42, 0.18), 0 1px 3px rgba(15, 23, 42, 0.12);
+  }
+  body.dark {
+    --app-bg: #101218;
+    --titlebar-bg: rgba(255, 255, 255, 0.035);
+    --line: rgba(255, 255, 255, 0.06);
+    --line-strong: rgba(255, 255, 255, 0.16);
+    --text: #e9ecf3;
+    --muted: #8b93a5;
+    --muted-2: #6e7788;
+    --chip-bg: rgba(255, 255, 255, 0.04);
+    --chip-line: rgba(255, 255, 255, 0.12);
+    --panel-soft: rgba(255, 255, 255, 0.02);
+    --switch-bg: rgba(255, 255, 255, 0.06);
+    --switch-active-bg: rgba(52, 211, 153, 0.16);
+    --switch-active-color: #a7f3d0;
+    --card-bg: #151923;
+    --green-deep: #34d399;
+    --teal: #a7f3d0;
+    --code-bg: #0b0f16;
+    --desk-bg-1: #0b0e14;
+    --desk-bg-2: #131a24;
+    --card-shadow: 0 4px 10px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.35);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+    background: radial-gradient(1100px 640px at 72% -8%, var(--desk-bg-2), var(--desk-bg-1) 62%);
+    color: var(--text);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font-family: inherit; cursor: pointer; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(140, 150, 170, 0.35); border-radius: 3px; }
+  .hidden { display: none !important; }
+
+  /* ================= 原型工具条（非软件本体） ================= */
+  .proto-bar {
+    height: 52px;
+    display: flex; align-items: center; gap: 14px;
+    padding: 0 18px;
+    border-bottom: 1px solid var(--line);
+    background: color-mix(in srgb, var(--app-bg) 86%, transparent);
+    backdrop-filter: blur(10px);
+    position: relative; z-index: 20;
+  }
+  .proto-logo {
+    width: 26px; height: 26px; border-radius: 8px;
+    display: grid; place-items: center;
+    background: linear-gradient(180deg, var(--green-soft), var(--green));
+    color: #05281b; flex: 0 0 auto;
+  }
+  .proto-logo svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+  .proto-name { font-size: 14px; font-weight: 700; letter-spacing: .3px; }
+  .proto-tag {
+    font-size: 11px; font-weight: 600; color: var(--teal);
+    border: 1px solid color-mix(in srgb, var(--green) 45%, transparent);
+    background: color-mix(in srgb, var(--green) 12%, transparent);
+    padding: 2px 8px; border-radius: 999px;
+  }
+  .proto-tip { flex: 1; font-size: 12px; color: var(--muted); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .proto-btn {
+    height: 30px; padding: 0 12px; border-radius: 8px;
+    border: 1px solid var(--chip-line); background: var(--chip-bg); color: var(--text);
+    font-size: 12px; font-weight: 600;
+  }
+  .proto-btn:hover { border-color: var(--green); color: var(--teal); }
+
+  /* ================= 模拟桌面 ================= */
+  .desk {
+    position: relative;
+    height: calc(100vh - 52px);
+    display: grid; place-items: center;
+    overflow: hidden;
+  }
+  .desk-glow { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .25; pointer-events: none; }
+  .desk-glow.g1 { width: 420px; height: 340px; background: var(--green); top: -70px; right: 8%; }
+  .desk-glow.g2 { width: 380px; height: 300px; background: #60a5fa; bottom: -60px; left: 6%; }
+  .desk-caption { position: absolute; bottom: 14px; left: 0; right: 0; text-align: center; font-size: 12px; color: var(--muted-2); letter-spacing: .4px; }
+
+  /* ================= 悬浮窗本体：竖向窄条 460×660 ================= */
+  .float-window {
+    position: relative; z-index: 5;
+    width: min(460px, calc(100vw - 40px));
+    height: min(660px, calc(100vh - 120px));
+    padding: 12px; /* 还原真实窗口的透明描边留白 */
+  }
+  .app {
+    height: 100%;
+    display: flex; flex-direction: column;
+    border-radius: 14px; overflow: hidden;
+    background: var(--app-bg);
+    border: 1px solid var(--line-strong);
+    box-shadow: var(--card-shadow);
+  }
+
+  /* ---------- 标题栏 ---------- */
+  .titlebar {
+    flex: 0 0 40px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 8px 0 12px;
+    background: var(--titlebar-bg);
+    border-bottom: 1px solid var(--line);
+  }
+  .brand { display: flex; align-items: center; gap: 7px; min-width: 0; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; box-shadow: 0 0 0 3px rgba(148, 163, 184, .18); flex: 0 0 auto; }
+  .dot.live { background: var(--green-deep); box-shadow: 0 0 0 3px rgba(16, 185, 129, .16); animation: pulse 1.8s infinite; }
+  .dot.busy { background: var(--amber); box-shadow: 0 0 0 3px rgba(245, 158, 11, .16); }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+  .brand-name { font-size: 13px; font-weight: 600; letter-spacing: .3px; white-space: nowrap; }
+  .brand-en { font-size: 10px; font-weight: 500; letter-spacing: .08em; color: var(--muted); }
+  .brand-sub { font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .badge-through {
+    font-size: 10px; letter-spacing: .5px; color: #2563eb;
+    border: 1px solid rgba(96, 165, 250, .4); background: rgba(59, 130, 246, .1);
+    padding: 1px 6px; border-radius: 999px;
+  }
+  body.dark .badge-through { color: #93c5fd; }
+
+  .mode-switch {
+    display: flex; align-items: center; gap: 2px; padding: 2px; margin: 0 6px;
+    border-radius: 8px; background: var(--switch-bg);
+  }
+  .mode-btn {
+    border: 0; background: transparent; color: var(--muted);
+    font-size: 11px; font-weight: 500; padding: 4px 12px; border-radius: 6px;
+  }
+  .mode-btn.active {
+    background: var(--switch-active-bg); color: var(--switch-active-color); font-weight: 600;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .08);
+  }
+  body.dark .mode-btn.active { box-shadow: none; }
+  .mode-btn:not(.active):hover { color: var(--text); }
+
+  .win-btns { display: flex; gap: 2px; }
+  .home-chip {
+    height: 24px; display: inline-flex; align-items: center; gap: 4px;
+    padding: 0 7px; border: 1px solid var(--chip-line); border-radius: 7px;
+    background: var(--chip-bg); color: var(--muted); font-size: 11px;
+  }
+  .home-chip:hover { color: var(--text); border-color: color-mix(in srgb, var(--text) 25%, transparent); }
+  .home-chip svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .protect-chip { padding: 0 5px; }
+  .protect-chip .shield-check { opacity: 0; }
+  .protect-chip.on { color: #059669; border-color: rgba(16, 185, 129, .45); background: rgba(16, 185, 129, .12); }
+  body.dark .protect-chip.on { color: #6ee7b7; }
+  .protect-chip.on .shield-check { opacity: 1; }
+  .icon-btn {
+    width: 26px; height: 24px; border: 0; border-radius: 6px;
+    background: transparent; color: var(--muted);
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .icon-btn svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; }
+  .icon-btn:hover { background: color-mix(in srgb, var(--text) 9%, transparent); color: var(--text); }
+  .icon-btn.danger:hover { background: rgba(239, 68, 68, .14); color: #ef4444; }
+
+  /* ---------- 控制栏 ---------- */
+  .control-bar {
+    flex: 0 0 46px; display: flex; align-items: center; gap: 8px;
+    padding: 0 10px; border-bottom: 1px solid var(--line);
+  }
+  button.primary {
+    border: 0; border-radius: 8px; padding: 7px 12px;
+    font-size: 12px; font-weight: 600; color: var(--green-ink);
+    background: linear-gradient(180deg, var(--green-soft), var(--green));
+    white-space: nowrap;
+  }
+  button.primary:hover { filter: brightness(1.05); }
+  button.primary.listening { background: linear-gradient(180deg, #fca5a5, #f87171); color: #2b0606; }
+  .meter {
+    flex: 1 1 auto; min-width: 30px; height: 8px; border-radius: 999px;
+    background: color-mix(in srgb, var(--text) 8%, transparent);
+    overflow: hidden;
+  }
+  .meter span {
+    display: block; height: 100%; width: 0%; border-radius: 999px;
+    background: linear-gradient(90deg, var(--green), var(--amber));
+    transition: width 90ms linear;
+  }
+  .ghost {
+    border: 1px solid var(--chip-line); background: var(--chip-bg); color: var(--muted);
+    border-radius: 8px; padding: 6px 10px; font-size: 12px; white-space: nowrap;
+  }
+  .ghost:hover { color: var(--text); border-color: color-mix(in srgb, var(--text) 25%, transparent); }
+  .bar-select select {
+    height: 26px; border-radius: 7px; border: 1px solid var(--chip-line);
+    background: var(--chip-bg); color: var(--text); font-size: 12px; padding: 0 4px;
+  }
+  .mini {
+    border: 1px solid var(--chip-line); background: var(--chip-bg); color: var(--muted);
+    border-radius: 7px; padding: 4px 9px; font-size: 11px; white-space: nowrap;
+  }
+  .mini:hover { color: var(--text); border-color: color-mix(in srgb, var(--text) 25%, transparent); }
+  .home-chip.auto-chip.on { color: #059669; border-color: rgba(16, 185, 129, .4); background: rgba(16, 185, 129, .1); }
+  body.dark .home-chip.auto-chip.on { color: #a7f3d0; }
+  .auto-led { width: 6px; height: 6px; border-radius: 50%; background: #94a3b8; }
+  .auto-chip.on .auto-led { background: var(--green-deep); animation: pulse 1.6s infinite; }
+  .balance-chip { font-variant-numeric: tabular-nums; }
+  .balance-led { width: 5px; height: 5px; border-radius: 50%; background: var(--green-deep); }
+
+  /* ---------- 面试空状态 ---------- */
+  .idle-hero {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    padding-bottom: 24px;
+  }
+  .idle-mark {
+    width: 64px; height: 64px; border-radius: 20px;
+    display: grid; place-items: center;
+    background: linear-gradient(145deg, rgba(52, 211, 153, .16), rgba(59, 130, 246, .12));
+    border: 1px solid rgba(110, 231, 183, .25);
+    color: var(--green-deep);
+  }
+  .idle-mark svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; }
+  .idle-title { font-size: 14px; font-weight: 600; }
+  .idle-sub { font-size: 11.5px; color: var(--muted); margin-top: -6px; text-align: center; max-width: 300px; line-height: 1.6; }
+  .idle-row { display: flex; gap: 8px; }
+  .idle-chip {
+    height: 28px; padding: 0 12px; border-radius: 999px;
+    border: 1px solid var(--chip-line); background: var(--chip-bg); color: var(--muted); font-size: 12px;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .idle-chip.on { color: #059669; border-color: rgba(16, 185, 129, .4); background: rgba(16, 185, 129, .1); }
+  body.dark .idle-chip.on { color: #a7f3d0; }
+  .idle-chip:not(.on):hover, .idle-chip.on:hover { color: var(--text); }
+  .idle-skip { border: 0; background: none; color: var(--muted-2); font-size: 12px; }
+  .idle-skip:hover { color: var(--text); }
+
+  /* ---------- 主区域：面试 ---------- */
+  .stage { flex: 1; display: flex; min-height: 0; }
+  .stage-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .panel { display: flex; flex-direction: column; min-height: 0; }
+  .transcript-panel { flex: 0 0 168px; border-bottom: 1px solid var(--line); }
+  .answer-panel { flex: 1; }
+  .panel-head {
+    flex: 0 0 28px; display: flex; align-items: center; gap: 8px;
+    padding: 0 10px; border-bottom: 1px solid var(--line);
+  }
+  .panel-title { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--muted); }
+  .panel-meta { font-size: 11px; color: var(--muted-2); flex: 1; text-align: right; }
+  .panel-tools { display: flex; gap: 4px; }
+  .transcript { flex: 1; overflow-y: auto; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+  .t-line { font-size: 12.5px; line-height: 1.55; color: var(--text); }
+  .t-line .qno {
+    display: inline-block; margin-right: 6px; padding: 0 5px; border-radius: 5px;
+    font-size: 10px; font-weight: 700; color: var(--teal);
+    background: color-mix(in srgb, var(--green) 16%, transparent);
+    vertical-align: 1px;
+  }
+  .t-line.pending { color: var(--muted-2); }
+  .t-line.pending::after { content: "▍"; color: var(--green-deep); animation: pulse 1s infinite; }
+  .answer { flex: 1; overflow-y: auto; padding: 10px 12px; }
+  .answer-body { font-size: 13px; line-height: 1.7; color: var(--text); white-space: pre-wrap; }
+  .answer-body .cursor { display: inline-block; width: 2px; height: 14px; background: var(--green-deep); vertical-align: -2px; margin-left: 2px; animation: pulse .9s infinite; }
+  .qhead-row { padding: 6px 12px 0; }
+  .qhead { font-size: 11px; color: var(--muted-2); background: var(--chip-bg); border: 1px dashed var(--chip-line); border-radius: 7px; padding: 4px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .empty { font-size: 12px; color: var(--muted-2); }
+
+  .splitter { position: relative; flex: 0 0 6px; z-index: 4; }
+  .splitter::after { content: ""; position: absolute; background: var(--line); transition: background .15s; }
+  .split-h::after { left: 10px; right: 10px; top: 2px; height: 2px; border-radius: 2px; }
+  .split-v::after { top: 10px; bottom: 10px; left: 2px; width: 2px; border-radius: 2px; }
+  .splitter:hover::after { background: var(--green); }
+
+  /* ---------- 右侧题目栏（窄竖条） ---------- */
+  .qrail {
+    flex: 0 0 76px; display: flex; flex-direction: column; min-height: 0;
+    border-left: 1px solid var(--line);
+    background: var(--panel-soft);
+  }
+  .qrail-head {
+    flex: 0 0 28px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 8px; font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--muted);
+    border-bottom: 1px solid var(--line);
+  }
+  .qrail-add {
+    border: 0; background: transparent; color: var(--green-deep);
+    font-size: 14px; font-weight: 700; line-height: 1; padding: 2px 4px; border-radius: 5px;
+  }
+  .qrail-add:hover { background: color-mix(in srgb, var(--green) 14%, transparent); }
+  .qrail-body { flex: 1; overflow-y: auto; padding: 8px 6px; }
+  .qrail-list { display: flex; flex-direction: column; gap: 6px; }
+  .qchip {
+    border: 1px solid var(--chip-line); background: var(--chip-bg); color: var(--muted);
+    border-radius: 8px; padding: 5px 0; text-align: center; font-size: 11px; font-weight: 600;
+  }
+  .qchip:hover { color: var(--text); }
+  .qchip.active { color: var(--teal); border-color: color-mix(in srgb, var(--green) 45%, transparent); background: color-mix(in srgb, var(--green) 10%, transparent); }
+  .qchip .q-ans { display: block; font-size: 9px; font-weight: 500; color: var(--muted-2); margin-top: 2px; }
+  .qrail-empty {
+    border: 1px dashed var(--chip-line); border-radius: 8px; padding: 8px 0;
+    text-align: center; font-size: 11px; font-weight: 700; color: var(--muted-2);
+  }
+  .qrail-foot { flex: 0 0 auto; padding: 8px; border-top: 1px solid var(--line); display: flex; justify-content: center; }
+  .avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: linear-gradient(145deg, #ff9db0, #ff5f7e);
+    color: #fff; font-size: 12px; font-weight: 700;
+    border: 2px solid #fff; box-shadow: 0 1px 4px rgba(255, 95, 126, .4);
+  }
+  body.dark .avatar { border-color: #1c2330; }
+
+  /* ---------- 主区域：笔试（纵向单列卡片，对齐真实软件） ---------- */
+  .written-stage {
+    flex: 1; min-height: 0; overflow-y: auto;
+    padding: 12px 12px 16px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .written-card {
+    border: 1px solid var(--line); border-radius: 11px;
+    background: var(--card-bg);
+    padding: 9px 11px 11px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+  }
+  body.dark .written-card { box-shadow: none; }
+  .written-card-head {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 7px;
+    font-size: 11px; font-weight: 700; color: var(--muted);
+  }
+  .written-no {
+    margin-left: auto; padding: 1px 7px; border-radius: 999px;
+    font-size: 10px; font-weight: 600; color: var(--teal);
+    background: color-mix(in srgb, var(--green) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--green) 30%, transparent);
+  }
+  .written-provider { margin-left: auto; font-size: 10px; font-weight: 500; color: var(--muted-2); }
+  .written-ocr { font-size: 12.5px; line-height: 1.65; color: var(--text); }
+  .written-answer { font-size: 12.5px; line-height: 1.65; color: var(--text); white-space: pre-wrap; }
+  .written-code {
+    margin-top: 8px; padding: 8px 10px; border-radius: 8px;
+    background: var(--code-bg); border: 1px solid rgba(255,255,255,.08);
+    font-family: Consolas, "JetBrains Mono", monospace; font-size: 11.5px; line-height: 1.6; color: #a5f3d0;
+    overflow-x: auto; white-space: pre;
+  }
+  .written-actions { display: flex; gap: 6px; margin-top: 9px; }
+
+  /* 笔试空状态（对齐截图） */
+  .written-empty {
+    flex: 1; min-height: 220px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  }
+  .written-empty-mark {
+    width: 46px; height: 46px; border-radius: 14px;
+    display: grid; place-items: center;
+    background: color-mix(in srgb, var(--green) 14%, transparent);
+    color: var(--green-deep);
+  }
+  .written-empty-mark svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; }
+  .written-empty-title { font-size: 13px; font-weight: 600; }
+  .written-empty-sub { font-size: 11.5px; line-height: 1.6; color: var(--muted); max-width: 300px; text-align: center; }
+  .written-empty .primary { margin-top: 6px; }
+
+  /* ---------- 迷你答案悬浮窗（笔试演示，出现在主窗右侧） ---------- */
+  .mini-answer {
+    position: absolute; left: calc(50% + 262px); top: 96px; z-index: 6;
+    width: 236px;
+    border-radius: 12px; overflow: hidden;
+    background: var(--app-bg); border: 1px solid var(--line-strong);
+    box-shadow: var(--card-shadow);
+    animation: drift 6s ease-in-out infinite;
+  }
+  @keyframes drift { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  .mini-head {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 10px; font-size: 11px; font-weight: 700; color: var(--muted);
+    border-bottom: 1px solid var(--line);
+  }
+  .mini-head .dot { width: 6px; height: 6px; }
+  .mini-head .mini-close { margin-left: auto; }
+  .mini-body { padding: 10px 12px; font-size: 11.5px; line-height: 1.6; color: var(--text); max-height: 150px; overflow-y: auto; }
+  .mini-foot { padding: 6px 10px 10px; display: flex; gap: 6px; }
+
+  /* ---------- Toast ---------- */
+  .toast {
+    position: fixed; left: 50%; bottom: 34px; transform: translateX(-50%);
+    padding: 9px 16px; border-radius: 9px; font-size: 12px;
+    background: color-mix(in srgb, var(--app-bg) 94%, transparent);
+    border: 1px solid var(--line-strong); box-shadow: var(--card-shadow);
+    color: var(--text); z-index: 50; opacity: 0; pointer-events: none;
+    transition: opacity .2s;
+  }
+  .toast.show { opacity: 1; }
+
+  @media (max-width: 1180px) { .mini-answer { display: none; } }
+</style>
+</head>
+<body>
+
+<!-- 原型工具条：不属于软件本体，评审用 -->
+<header class="proto-bar">
+  <div class="proto-logo" aria-hidden="true">
+    <svg viewBox="0 0 24 24"><path d="M5 10v4M8.5 7v10M12 4.5v15M15.5 7v10M19 10v4"/></svg>
+  </div>
+  <span class="proto-name">应声面试</span>
+  <span class="proto-tag">界面原型 · 可交互</span>
+  <span class="proto-tip">点软件里的按钮可看效果：开始收音（模拟转写+流式回答）、面试/笔试切换、笔试截题、深浅主题</span>
+  <button class="proto-btn" id="protoTheme" type="button">🌙 深色主题</button>
+</header>
+
+<!-- 模拟桌面 -->
+<div class="desk">
+  <div class="desk-glow g1"></div>
+  <div class="desk-glow g2"></div>
+
+  <div class="float-window">
+    <div class="app" id="app">
+
+      <!-- 标题栏 -->
+      <header class="titlebar">
+        <div class="brand">
+          <span class="dot" id="statusDot"></span>
+          <span class="brand-name">应声面试</span>
+          <span class="brand-en">EchoQ</span>
+          <span class="brand-sub" id="statusText">ASR 就绪</span>
+          <span class="badge-through hidden" id="throughBadge">穿透中</span>
+        </div>
+        <div class="mode-switch">
+          <button class="mode-btn active" type="button" data-mode="interview">面试</button>
+          <button class="mode-btn" type="button" data-mode="written">笔试</button>
+        </div>
+        <div class="win-btns">
+          <button class="home-chip protect-chip" id="btnProtect" type="button" title="防录屏隐身">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3l7 3v6c0 4.2-2.8 7.6-7 9-4.2-1.4-7-4.8-7-9V6l7-3z"/>
+              <path class="shield-check" d="M8.8 12.1l2.1 2.1 4.3-4.3"/>
+            </svg>
+          </button>
+          <button class="icon-btn" title="隐藏（Ctrl+Alt+H）">
+            <svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg>
+          </button>
+          <button class="icon-btn danger" title="退出">
+            <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- 面试控制栏 -->
+      <section class="control-bar" id="interviewBar">
+        <button class="primary" id="btnListen" type="button">开始听面试官</button>
+        <div class="meter"><span id="levelBar"></span></div>
+        <button class="ghost" id="btnSource" type="button" title="切换收听来源">🎙 电脑声音</button>
+        <button class="home-chip auto-chip on" id="btnAuto" type="button" title="自动回答">
+          <span class="auto-led"></span><span>自动</span>
+        </button>
+        <button class="home-chip balance-chip" type="button" title="账号与剩余时长">
+          <span class="balance-led"></span><span>时长充足</span>
+        </button>
+      </section>
+
+      <!-- 笔试控制栏 -->
+      <section class="control-bar hidden" id="writtenBar">
+        <button class="primary" id="btnCapture" type="button">截取题目</button>
+        <button class="ghost" type="button">📱 手机扫码</button>
+        <label class="bar-select" title="答案显示位置">
+          <select aria-label="答案显示位置">
+            <option>双屏</option><option>电脑</option><option>手机</option>
+          </select>
+        </label>
+        <div style="flex:1"></div>
+        <button class="mini" type="button">清空</button>
+      </section>
+
+      <!-- 面试空状态 -->
+      <section class="idle-hero" id="idleHero">
+        <div class="idle-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M5 10v4M8.5 7v10M12 4.5v15M15.5 7v10M19 10v4"/></svg>
+        </div>
+        <div class="idle-title">准备好了就开始吧</div>
+        <div class="idle-sub">面试官说话会实时转成文字，并自动生成能直接说出口的回答</div>
+        <button class="primary idle-start" id="btnIdleStart" type="button">开始听面试官</button>
+        <div class="idle-row">
+          <button class="idle-chip on" id="btnIdleSource" type="button">🎙 电脑声音</button>
+          <button class="idle-chip on" id="btnIdleAuto" type="button">
+            <span class="auto-led" style="background:var(--green-deep)"></span>自动回答
+          </button>
+        </div>
+        <button class="idle-skip" type="button">稍后再说 →</button>
+      </section>
+
+      <!-- 主区域：面试 -->
+      <div class="stage hidden" id="interviewStage">
+        <div class="stage-main">
+          <section class="panel transcript-panel">
+            <div class="panel-head">
+              <span class="panel-title">面试官</span>
+              <span class="panel-meta" id="asrMeta">聆听中 · 本机识别</span>
+            </div>
+            <div class="transcript" id="transcript"></div>
+          </section>
+
+          <div class="splitter split-h" title="拖动调整「面试官」与「建议回答」的高度"></div>
+
+          <section class="panel answer-panel">
+            <div class="panel-head">
+              <span class="panel-title">建议回答</span>
+              <span class="panel-meta" id="answerMeta"></span>
+              <div class="panel-tools">
+                <button class="mini" id="btnStopGen" type="button" style="color:#ef4444">停止生成</button>
+                <button class="mini" id="btnRegen" type="button">重新生成</button>
+                <button class="mini" type="button">复制</button>
+                <button class="mini" type="button">导出</button>
+                <button class="mini" type="button" title="清空所有题目和回答（Ctrl+Alt+K）">🗑</button>
+              </div>
+            </div>
+            <div class="qhead-row">
+              <div class="qhead" id="qhead">识别到问题后自动编号，点右侧 Q1/Q2 可回看</div>
+            </div>
+            <div class="answer" id="answer"><div class="empty">识别到问题后会自动生成，也可以点任意一条转写直接作答。</div></div>
+          </section>
+        </div>
+
+        <div class="splitter split-v" title="拖动调整题目栏宽度"></div>
+
+        <!-- 右侧题目栏 -->
+        <aside class="qrail">
+          <div class="qrail-head"><span>题目</span><button class="qrail-add" type="button" title="截取题目">＋</button></div>
+          <div class="qrail-body">
+            <div class="qrail-list" id="qrailList"></div>
+          </div>
+          <div class="qrail-foot">
+            <button class="avatar" type="button" title="账号中心">访</button>
+          </div>
+        </aside>
+      </div>
+
+      <!-- 主区域：笔试（纵向卡片） -->
+      <section class="written-stage hidden" id="writtenStage">
+
+        <!-- 空状态（对齐真实软件截图） -->
+        <div class="written-empty" id="writtenEmpty">
+          <div class="written-empty-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3"/><path d="M9 12h6"/><path d="M9 16h4"/><path d="M14.5 4.5l5 5L21 8l-5-5-1.5 1.5z"/></svg>
+          </div>
+          <div class="written-empty-title">按 Alt+Shift+A 框选题目</div>
+          <div class="written-empty-sub">支持选择题、代码、数学公式；识别后可修改再重答。</div>
+          <button class="primary" id="btnWrittenEmptyCapture" type="button">截取题目</button>
+        </div>
+
+        <!-- 有内容状态：题目卡 + 答案卡（上下堆叠） -->
+        <div class="hidden" id="writtenCurrent">
+          <div class="written-card">
+            <div class="written-card-head"><span>题目</span><span class="written-no">Q1 · 已识别</span></div>
+            <div class="written-ocr">给定一个整数数组 <b>nums</b> 和一个整数目标值 <b>target</b>，请你在该数组中找出和为目标值的那两个整数，并返回它们的数组下标。<br><br>假设每种输入只会对应一个答案，同一个元素不能重复使用，可以按任意顺序返回答案。<br><br><b>示例：</b>输入 nums = [2,7,11,15]，target = 9，输出 [0,1]，因为 nums[0] + nums[1] = 9。</div>
+          </div>
+
+          <div class="written-card">
+            <div class="written-card-head"><span>答案</span><span class="written-provider">官方模型 · 已完成</span></div>
+            <div class="written-answer" id="writtenAnswer">思路：用哈希表一次遍历。遍历数组时，对每个数 x 先查 target − x 是否已经在表里；在就直接返回两个下标，不在就把 x 存进表。这样每个元素只看一次。
+时间复杂度 O(n)，空间复杂度 O(n)。
+<div class="written-code">function twoSum(nums, target) {
+  const map = new Map();
+  for (let i = 0; i &lt; nums.length; i++) {
+    const need = target - nums[i];
+    if (map.has(need)) return [map.get(need), i];
+    map.set(nums[i], i);
+  }
+  return [];
+}</div></div>
+            <div class="written-actions">
+              <button class="mini" type="button">复制</button>
+              <button class="mini" type="button">重新回答</button>
+              <button class="mini" type="button">推送到手机</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- 迷你答案悬浮窗（笔试模式时展示「推送到悬浮窗」形态） -->
+  <div class="mini-answer hidden" id="miniAnswer">
+    <div class="mini-head">
+      <span class="dot live"></span> 答案 · 置顶悬浮
+      <button class="icon-btn mini-close" type="button" title="隐藏">
+        <svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg>
+      </button>
+    </div>
+    <div class="mini-body">两数之和用哈希表一次遍历：先查 target − x 是否在表里，在就返回下标；不在就存入。O(n) 时间、O(n) 空间。</div>
+    <div class="mini-foot">
+      <button class="mini" type="button">展开</button>
+      <button class="mini" type="button">同步手机</button>
+    </div>
+  </div>
+
+  <div class="desk-caption">桌面示意 · 竖向窄条悬浮窗（默认 460×660），置顶 / 可拖动 / 鼠标穿透 / 防录屏隐身</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  /* ============ 数据：模拟一场面试（无真实接入，纯演示动画） ============ */
+  const SCRIPT = [
+    {
+      q: "先简单做个自我介绍吧，重点讲一下你最近做的项目。",
+      a: "好的面试官。我叫[姓名]，最近一年主要在做一款桌面端的内容创作工具：我负责 Electron 客户端的整体界面、本地服务的分层结构，以及语音识别和大模型流式输出的接入。这个项目从零到一跑起来了，让我对桌面端性能优化和实时交互比较有手感，也养成了先做最小可用版本、再快速迭代的习惯。"
+    },
+    {
+      q: "你提到流式输出，前端是怎么处理大模型逐字返回的？",
+      a: "主要是通过 SSE 或分段回调拿到增量文本。前端会维护一个缓冲区，按句子或者固定字符数批量更新 DOM，避免每个字符都触发一次重排；渲染合并用 requestAnimationFrame 来做。如果生成中断，会保留已经生成的部分，并给用户一个「继续生成」的入口，保证体验上不黑屏、不丢内容。"
+    },
+    {
+      q: "如果让你负责一个新功能从设计到上线，你会怎么做？",
+      a: "我会先明确目标用户和要验证的假设，把功能拆成最小可验证的版本；开发前和相关方对齐交互细节和数据口径，开发中用灰度或功能开关控制发布范围；上线后盯使用率、留存这些指标，再决定加大投入还是回滚。整体思路是小步快跑，用数据代替拍脑袋。"
+    }
+  ];
+
+  const $ = (s) => document.querySelector(s);
+  const statusDot = $("#statusDot"), statusText = $("#statusText");
+  const btnListen = $("#btnListen"), btnIdleStart = $("#btnIdleStart");
+  const levelBar = $("#levelBar");
+  const transcript = $("#transcript"), answer = $("#answer");
+  const qrailList = $("#qrailList");
+  const answerMeta = $("#answerMeta"), asrMeta = $("#asrMeta"), qhead = $("#qhead");
+  const toast = $("#toast");
+  let listening = false, generating = false, timers = [], qIndex = 0, autoOn = true, sourceOn = true;
+
+  function clearTimers() { timers.forEach(clearTimeout); timers.forEach(clearInterval); timers = []; }
+  function later(fn, ms) { const t = setTimeout(fn, ms); timers.push(t); return t; }
+  function showToast(msg) {
+    toast.textContent = msg; toast.classList.add("show");
+    later(() => toast.classList.remove("show"), 2200);
+  }
+
+  /* ============ 模式切换 ============ */
+  document.querySelectorAll(".mode-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".mode-btn").forEach(b => b.classList.toggle("active", b === btn));
+      const written = btn.dataset.mode === "written";
+      $("#writtenBar").classList.toggle("hidden", !written);
+      $("#interviewBar").classList.toggle("hidden", written);
+      $("#writtenStage").classList.toggle("hidden", !written);
+      $("#miniAnswer").classList.toggle("hidden", !written);
+      if (!written) {
+        $("#idleHero").classList.toggle("hidden", listening);
+        $("#interviewStage").classList.toggle("hidden", !listening);
+      } else {
+        $("#idleHero").classList.add("hidden");
+        $("#interviewStage").classList.add("hidden");
+      }
+    });
+  });
+
+  /* ============ 收音 / 转写 / 生成（模拟） ============ */
+  function startListening() {
+    if (listening) return;
+    listening = true; qIndex = 0;
+    $("#idleHero").classList.add("hidden");
+    $("#interviewStage").classList.remove("hidden");
+    statusDot.className = "dot live";
+    statusText.textContent = "聆听中";
+    btnListen.textContent = "停止收音"; btnListen.classList.add("listening");
+    asrMeta.textContent = "聆听中 · 本机识别";
+    transcript.innerHTML = ""; answer.innerHTML = '<div class="empty">等待识别到问题…</div>';
+    qrailList.innerHTML = "";
+    startMeter();
+    let delay = 1200;
+    SCRIPT.forEach((item, i) => {
+      later(() => askQuestion(item, i), delay);
+      delay += item.q.length * 28 + 2600 + item.a.length * 16 + 1800;
+    });
+    later(() => { if (listening) stopListening(true); }, delay);
+  }
+
+  function stopListening(silent) {
+    listening = false; generating = false;
+    clearTimers();
+    statusDot.className = "dot";
+    statusText.textContent = "已停止";
+    btnListen.textContent = "开始听面试官"; btnListen.classList.remove("listening");
+    asrMeta.textContent = "未连接";
+    levelBar.style.width = "0%";
+    if (!silent) showToast("已停止收音，本次转写与回答已保留");
+  }
+
+  function askQuestion(item, i) {
+    if (!listening) return;
+    qIndex = i + 1;
+    qhead.textContent = "Q" + qIndex + " · " + item.q.slice(0, 18) + "…";
+    const line = document.createElement("div");
+    line.className = "t-line pending";
+    line.innerHTML = '<span class="qno">Q' + (i + 1) + "</span><span class='txt'></span>";
+    transcript.appendChild(line);
+    transcript.scrollTop = transcript.scrollHeight;
+    typeText(line.querySelector(".txt"), item.q, 28, () => {
+      line.classList.remove("pending");
+      addQChip(i + 1);
+      if (autoOn) generateAnswer(item.a, i + 1);
+    });
+  }
+
+  function generateAnswer(text, no) {
+    generating = true;
+    answerMeta.textContent = "生成中 · Q" + no;
+    answer.innerHTML = '<div class="answer-body"><span class="cursor"></span></div>';
+    const body = answer.querySelector(".answer-body");
+    typeText(body, text, 14, () => {
+      generating = false;
+      answerMeta.textContent = "已完成 · Q" + no;
+      const cur = answer.querySelector(".cursor"); if (cur) cur.remove();
+    });
+  }
+
+  function typeText(el, text, speed, done) {
+    let i = 0;
+    const step = () => {
+      if (!listening && el.closest("#answer")) return;
+      i = Math.min(text.length, i + 2);
+      el.textContent = text.slice(0, i);
+      const scroller = el.closest(".transcript") || el.closest(".answer");
+      if (scroller) scroller.scrollTop = scroller.scrollHeight;
+      if (i < text.length) later(step, speed);
+      else if (done) done();
+    };
+    step();
+  }
+
+  function addQChip(no) {
+    const chip = document.createElement("button");
+    chip.className = "qchip"; chip.type = "button";
+    chip.innerHTML = "Q" + no + '<span class="q-ans">已回答</span>';
+    chip.addEventListener("click", () => {
+      document.querySelectorAll(".qchip").forEach(c => c.classList.toggle("active", c === chip));
+      generateAnswer(SCRIPT[no - 1].a, no);
+      showToast("已回看 Q" + no + " 的建议回答");
+    });
+    qrailList.appendChild(chip);
+  }
+
+  /* ============ 音量条动画 ============ */
+  let meterTimer = null;
+  function startMeter() {
+    clearInterval(meterTimer);
+    meterTimer = setInterval(() => {
+      if (!listening) return clearInterval(meterTimer);
+      levelBar.style.width = (18 + Math.random() * 62) + "%";
+    }, 130);
+    timers.push(meterTimer);
+  }
+
+  /* ============ 按钮事件 ============ */
+  btnIdleStart.addEventListener("click", startListening);
+  btnListen.addEventListener("click", () => listening ? stopListening() : startListening());
+  $("#btnSource").addEventListener("click", (e) => {
+    sourceOn = !sourceOn;
+    e.currentTarget.textContent = sourceOn ? "🎙 电脑声音" : "🎤 麦克风";
+    showToast(sourceOn ? "已切换为电脑声音（适合线上面试）" : "已切换为麦克风（适合线下面试）");
+  });
+  $("#btnIdleSource").addEventListener("click", (e) => {
+    sourceOn = !sourceOn;
+    e.currentTarget.textContent = sourceOn ? "🎙 电脑声音" : "🎤 麦克风";
+  });
+  $("#btnAuto").addEventListener("click", (e) => {
+    autoOn = !autoOn;
+    e.currentTarget.classList.toggle("on", autoOn);
+    showToast(autoOn ? "自动回答已开启" : "自动回答已关闭，可按 Ctrl+Alt+A 手动作答");
+  });
+  $("#btnIdleAuto").addEventListener("click", (e) => {
+    autoOn = !autoOn;
+    e.currentTarget.classList.toggle("on", autoOn);
+  });
+  $("#btnRegen").addEventListener("click", () => {
+    if (qIndex > 0) { generateAnswer(SCRIPT[qIndex - 1].a, qIndex); showToast("正在重新生成 Q" + qIndex + " 的回答…"); }
+    else showToast("还没有识别到问题");
+  });
+  $("#btnStopGen").addEventListener("click", () => { generating = false; answerMeta.textContent = "已停止生成"; showToast("已停止生成，保留当前内容"); });
+  $("#btnProtect").addEventListener("click", (e) => {
+    const on = e.currentTarget.classList.toggle("on");
+    $("#throughBadge").classList.toggle("hidden", !on);
+    statusText.textContent = on ? "防录屏隐身中" : (listening ? "聆听中" : "ASR 就绪");
+    showToast(on ? "防录屏隐身已开启：共享屏幕时窗口不可见" : "防录屏隐身已关闭");
+  });
+
+  /* 笔试：点「截取题目」从空状态切到「已识别」卡片（模拟截图识别完成） */
+  function captureDemo() {
+    $("#writtenEmpty").classList.add("hidden");
+    $("#writtenCurrent").classList.remove("hidden");
+    showToast("原型演示：已模拟识别出一道题并生成答案");
+  }
+  $("#btnCapture").addEventListener("click", captureDemo);
+  $("#btnWrittenEmptyCapture").addEventListener("click", captureDemo);
+  document.querySelector(".qrail-add").addEventListener("click", captureDemo);
+
+  document.querySelector(".idle-skip").addEventListener("click", () => {
+    $("#idleHero").classList.add("hidden");
+    $("#interviewStage").classList.remove("hidden");
+    statusText.textContent = "ASR 就绪";
+    showToast("已跳过引导，可点左上角「开始听面试官」");
+  });
+  document.querySelectorAll(".icon-btn.danger, .mini-answer .mini-close").forEach(b =>
+    b.addEventListener("click", () => showToast("原型演示：真实软件此处为退出 / 隐藏窗口")));
+
+  /* ============ 明暗主题（默认浅色，与真实软件一致） ============ */
+  $("#protoTheme").addEventListener("click", (e) => {
+    const dark = document.body.classList.toggle("dark");
+    e.currentTarget.textContent = dark ? "☀️ 浅色主题" : "🌙 深色主题";
+  });
+</script>
+</body>
+</html>
