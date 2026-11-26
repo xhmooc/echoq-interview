@@ -1,3 +1,5 @@
+[简体中文](README.md) · [English](README.en.md)
+
 <p align="center">
   <img src="build/icon.png" width="96" height="96" alt="EchoQ Interview" />
 </p>
@@ -11,7 +13,7 @@
 <p align="center">
   <a href="https://github.com/xhmooc/echoq-interview/releases/latest"><img src="https://img.shields.io/github/v/release/xhmooc/echoq-interview?label=release" alt="Release" /></a>
   <img src="https://img.shields.io/badge/platform-Windows%2010%20%2F%2011-0078D6" alt="Windows" />
-  <img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial-22c993" alt="License" />
+  <img src="https://img.shields.io/badge/license-MIT-22c993" alt="License" />
 </p>
 
 | 面试演示 | 笔试演示 |
@@ -267,10 +269,6 @@ npx electron . --remote-debugging-port=9221
 
 ## 许可证
 
-本项目采用 [PolyForm Noncommercial License 1.0.0](LICENSE)：源码公开，允许个人学习、研究、试验和非商业用途；未经著作权人书面许可，不得用于商业目的，包括但不限于售卖、付费分发、商业 SaaS 或企业内部商业使用。
+本项目采用 [MIT License](LICENSE)。
 
-这是源码公开（source-available），不是 OSI 定义的开源软件。
-
-许可范围仅覆盖本仓库内的客户端代码与官网静态页面。服务端（账号、计时计费、云端 ASR 与大模型中转、管理后台）为闭源软件，不在本仓库内，也不在本许可授权范围内。
-
-如需商业授权，请先联系著作权人。
+许可范围仅覆盖本仓库内的客户端代码与官网静态页面。服务端（账号、计时计费、云端 ASR 与大模型中转、管理后台）为闭源软件，不在本仓库内，也不在本许可授权范围内。产品名称、Logo 与 EchoQ 云端服务不在授权范围内。
